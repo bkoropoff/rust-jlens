@@ -1,3 +1,26 @@
+//! Extract data from JSON
+//!
+//! This crate provides a simple domain-specific language based on
+//! method chaining to construct and run queries against
+//! `serialize::json::Json` objects.
+//!
+//! An object implementing the `Selector` trait describes how to
+//! select a set of nodes starting at a given path in a JSON document.
+//! The most basic selector can be created with the `node()` function:
+//! this selector always selects precisely the path given to it.  All
+//! selectors have methods such as `child()` and `key()` which return
+//! a new selector.  The new selector will select nodes relative to
+//! the output of the original according to some criteria.  For
+//! example, `node().child()` selects all children of the initial
+//! node, while `node().child().child()` selects all children of the
+//! children of the initial node, and so on.  By continuing to chain
+//! method calls in this manner, a selector object representing a
+//! complex query expression can be built up.
+//!
+//! The `JsonExt` trait provides a convenience method on `Json`
+//! objects which runs a selector and returns a `Vec<&'self Json>` of
+//! results.
+
 #![crate_type = "rlib"]
 #![crate_id = "jlens#0.0.1"]
 #![feature(globs)]
@@ -7,10 +30,156 @@ extern crate serialize;
 use serialize::json;
 use std::collections::hashmap;
 
-pub struct Path<'a,'b>(&'a json::Json, Option<&'b Path<'a,'b>>);
+/// JSON node path
+///
+/// Represents a path to a JSON node.  It consists of
+/// a reference to the node in question and an optional
+/// reference to a path to the parent node.  This
+/// optional parent path should be `None` only for the root
+/// node of a `Json` object.
+pub struct Path<'a,'b>(pub &'a json::Json, pub Option<&'b Path<'a,'b>>);
 
+/// JSON selector trait
+///
+/// Implementors of this trait select nodes from `Json`
+/// objects according to some criteria.
 pub trait Selector {
+    /// Select matching nodes
+    ///
+    /// Given the path to a single node, `input`, this
+    /// method should identify nodes to be selected and
+    /// invoke the closure `f` with a path to each.
     fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|);
+
+    /// Select current node if it is a `json::Boolean`
+    fn boolean(self) -> Boolean<Self> {
+        Boolean { inner: self }
+    }
+
+    /// Select current node if it is a `json::Number`
+    fn number(self) -> Number<Self> {
+        Number { inner: self }
+    }
+
+    /// Select current node if it is a `json::String`
+    fn string(self) -> String<Self> {
+        String { inner: self }
+    }
+
+    /// Select current node if it is a `json::Object`
+    fn object(self) -> Object<Self> {
+        Object { inner: self }
+    }
+
+    /// Select current node if it is a `json::List`
+    fn list(self) -> List<Self> {
+        List { inner: self }
+    }
+
+    /// Select list element
+    ///
+    /// If the current node is a `json::List` of at
+    /// least `index + 1` elements, selects the element
+    /// at `index`.  Otherwise no nodes are selected.
+    fn at(self, index: uint) -> At<Self> {
+        At { inner: self, index: index }
+    }
+
+    /// Select object value for key
+    ///
+    /// If the current node is a `json::Object` that contains
+    /// the key `name`, its value is selected.  Otherwise no
+    /// nodes are selected.
+    fn key<'a>(self, name: &'a str) -> Key<'a, Self> {
+        Key { inner: self, name: name }
+    }
+
+    /// Select children of current node
+    ///
+    /// Selects all immediate child nodes of the current node:
+    /// all elements of a `json::List`, or all values of a
+    /// `json::Object`.
+    fn child(self) -> Child<Self> {
+        Child { inner: self }
+    }
+
+    /// Select parent of current node if it is not the root
+    fn parent(self) -> Parent<Self> {
+        Parent { inner: self }
+    }
+
+    /// Select descendents of current node
+    ///
+    /// Selects all child nodes of the current node and all their
+    /// children, recursively.
+    fn descend(self) -> Descend<Self> {
+        Descend { inner: self }
+    }
+
+    /// Select ancestors of current node
+    ///
+    /// Selects the parent, grandparent, etc. of the current node
+    /// up to the root of the tree.
+    fn ascend(self) -> Ascend<Self> {
+        Ascend { inner: self }
+    }
+
+    /// Select current node based on filter
+    ///
+    /// Runs the selector `filter` on the current node.  If it selects
+    /// any nodes, the current node is selected.  If it does not select
+    /// any nodes, no nodes are selected.
+    fn where<T:Selector>(self, filter: T) -> Where<Self,T> {
+        Where { inner: self, filter: filter }
+    }
+
+    /// Select union of two selectors
+    ///
+    /// Runs `left` and `right` on the current node and selects
+    /// nodes which are selected by either.
+    fn union<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Union<Self,T1,T2> {
+        Union { inner: self, left: left, right: right }
+    }
+
+    /// Select intersection of two selectors
+    ///
+    /// Runs `left` and `right` on the current node and selects
+    /// nodes which are selected by both.
+    fn intersect<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Intersect<Self,T1,T2> {
+        Intersect { inner: self, left: left, right: right }
+    }
+
+    /// Select symmetric difference of two selectors
+    ///
+    /// Runs `left` and `right` on the current node, selecting
+    /// nodes which are selected by `left` but not selected
+    /// by `right`.
+    ///
+    /// Warning: this selector will execute its parent in the chain
+    /// twice which may result in bad performance.
+    fn diff<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Diff<Self,T1,T2> {
+        Diff { inner: self, left: left, right: right }
+    }
+
+    /// Select logical-and of two selectors
+    ///
+    /// Runs `left` and `right` on the current node and
+    /// selects an arbitrary node if both selected at
+    /// least one node themselves.  This is useful for
+    /// encoding logical-and conditions for `which`.
+    fn and<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> And<Self,T1,T2> {
+        And { inner: self, left: left, right: right }
+    }
+
+    /// Select logical-or of two selectors
+    ///
+    /// Runs `left` and `right` on the current node and
+    /// selects an arbitrary node if either selected at
+    /// least one node themselves.  This is useful for
+    /// encoding logical-and conditions for `which`.
+    fn or<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Or<Self,T1,T2> {
+        Or { inner: self, left: left, right: right }
+    }
 }
 
 pub struct Node {
@@ -63,6 +232,7 @@ pub struct StringEquals<'a,S> {
 }
 
 impl<S:Selector> String<S> {
+    /// Select current `json::String` node if it is equal to `comp`
     pub fn equals<'a,'b>(self, comp: &'a str) -> StringEquals<'a,S> {
         let String { inner: inner } = self;
         StringEquals { inner: inner, comp: comp }
@@ -101,6 +271,7 @@ pub struct BooleanEquals<S> {
 }
 
 impl<S:Selector> Boolean<S> {
+    /// Select current `json::Boolean` node if it is equal to `comp`
     pub fn equals(self, comp: bool) -> BooleanEquals<S> {
         let Boolean { inner: inner } = self;
         BooleanEquals { inner: inner, comp: comp }
@@ -146,6 +317,7 @@ impl<S:Selector> Number<S> {
 }
 
 impl<S:Selector> Selector for Number<S> {
+    /// Select current `json::Number` node if it is equal to `comp`
     fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
@@ -445,81 +617,13 @@ impl<I:Selector,S:Selector,T:Selector> Selector for Or<I,S,T> {
     }
 }
 
-pub trait SelectorExt {
-    fn boolean(self) -> Boolean<Self>;
-    fn number(self) -> Number<Self>;
-    fn string(self) -> String<Self>;
-    fn object(self) -> Object<Self>;
-    fn list(self) -> List<Self>;
-    fn at(self, index: uint) -> At<Self>;
-    fn key<'a>(self, name: &'a str) -> Key<'a, Self>;
-    fn child(self) -> Child<Self>;
-    fn parent(self) -> Parent<Self>;
-    fn descend(self) -> Descend<Self>;
-    fn ascend(self) -> Ascend<Self>;
-    fn where<T:Selector>(self, filter: T) -> Where<Self,T>;
-    fn intersect<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Intersect<Self,T1,T2>;
-    fn union<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Union<Self,T1,T2>;
-    fn diff<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Diff<Self,T1,T2>;
-    fn and<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> And<Self,T1,T2>;
-    fn or<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Or<Self,T1,T2>;
-}
-
-impl<S:Selector> SelectorExt for S {
-    fn boolean(self) -> Boolean<S> {
-        Boolean { inner: self }
-    }
-    fn number(self) -> Number<S> {
-        Number { inner: self }
-    }
-    fn string(self) -> String<S> {
-        String { inner: self }
-    }
-    fn object(self) -> Object<S> {
-        Object { inner: self }
-    }
-    fn list(self) -> List<S> {
-        List { inner: self }
-    }
-    fn at(self, index: uint) -> At<S> {
-        At { inner: self, index: index }
-    }
-    fn key<'a>(self, name: &'a str) -> Key<'a, S> {
-        Key { inner: self, name: name }
-    }
-    fn child(self) -> Child<S> {
-        Child { inner: self }
-    }
-    fn parent(self) -> Parent<S> {
-        Parent { inner: self }
-    }
-    fn descend(self) -> Descend<S> {
-        Descend { inner: self }
-    }
-    fn ascend(self) -> Ascend<S> {
-        Ascend { inner: self }
-    }
-    fn where<T:Selector>(self, filter: T) -> Where<S,T> {
-        Where { inner: self, filter: filter }
-    }
-    fn union<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Union<S,T1,T2> {
-        Union { inner: self, left: left, right: right }
-    }
-    fn intersect<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Intersect<S,T1,T2> {
-        Intersect { inner: self, left: left, right: right }
-    }
-    fn diff<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Diff<S,T1,T2> {
-        Diff { inner: self, left: left, right: right }
-    }
-    fn and<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> And<S,T1,T2> {
-        And { inner: self, left: left, right: right }
-    }
-    fn or<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Or<S,T1,T2> {
-        Or { inner: self, left: left, right: right }
-    }
-}
-
+/// Extension trait for `Json`
 pub trait JsonExt {
+    /// Run query
+    ///
+    /// Runs the query represented by the selector `s`
+    /// against the JSON document, accumulating and
+    /// returning the results in a new vector.
     fn query<'a,S:Selector>(&'a self, s: S) -> Vec<&'a json::Json>;
 }
 
@@ -537,74 +641,97 @@ impl JsonExt for json::Json {
     }
 }
 
+/// Create trivial selector
+///
+/// Creates a trivial selector which always selects
+/// the current node.  This is the starting point of
+/// all selector chains which build up more complex
+/// query expressions.
 pub fn node() -> Node {
     Node { _dummy: () }
 }
 
+/// Shorthand for `node().boolean()`
 pub fn boolean() -> Boolean<Node> {
     node().boolean()
 }
 
+/// Shorthand for `node().number()`
 pub fn number() -> Number<Node> {
     node().number()
 }
 
+/// Shorthand for `node().string()`
 pub fn string() -> String<Node> {
     node().string()
 }
 
+/// Shorthand for `node().object()`
 pub fn object() -> Object<Node> {
     node().object()
 }
 
+/// Shorthand for `node().list()`
 pub fn list() -> List<Node> {
     node().list()
 }
 
+/// Shorthand for `node().child()`
 pub fn child() -> Child<Node> {
     node().child()
 }
 
+/// Shorthand for `node().parent()`
 pub fn parent() -> Parent<Node> {
     node().parent()
 }
 
+/// Shorthand for `node().descend()`
 pub fn descend() -> Descend<Node> {
     node().descend()
 }
 
+/// Shorthand for `node().ascend()`
 pub fn ascend() -> Ascend<Node> {
     node().ascend()
 }
 
+/// Shorthand for `node().at(index)`
 pub fn at(index: uint) -> At<Node> {
     node().at(index)
 }
 
+/// Shorthand for `node().key(name)`
 pub fn key<'a>(name: &'a str) -> Key<'a, Node> {
     node().key(name)
 }
 
+/// Shorthand for `node().where(filter)`
 pub fn where<T:Selector>(filter: T) -> Where<Node,T> {
     node().where(filter)
 }
 
+/// Shorthand for `node().intersect(left, right)`
 pub fn intersect<T1:Selector,T2:Selector>(left: T1, right: T2) -> Intersect<Node,T1,T2> {
     node().intersect(left, right)
 }
 
+/// Shorthand for `node().union(left, right)`
 pub fn union<T1:Selector,T2:Selector>(left: T1, right: T2) -> Union<Node,T1,T2> {
     node().union(left, right)
 }
 
+/// Shorthand for `node().diff(left, right)`
 pub fn diff<T1:Selector,T2:Selector>(left: T1, right: T2) -> Diff<Node,T1,T2> {
     node().diff(left, right)
 }
 
+/// Shorthand for `node().and(left, right)`
 pub fn and<T1:Selector,T2:Selector>(left: T1, right: T2) -> And<Node,T1,T2> {
     node().and(left, right)
 }
 
+/// Shorthand for `node().or(left, right)`
 pub fn or<T1:Selector,T2:Selector>(left: T1, right: T2) -> Or<Node,T1,T2> {
     node().or(left, right)
 }
