@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="The jlens library documentation.">
+
+    <title>jlens::Boolean - Rust</title>
+
+    <link href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600'
+          rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="../main.css">
+
+    
+</head>
+<body>
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='index.html'>jlens</a></p><div class='block struct'><h2>Structs</h2><a class='struct ' href='struct.And.html'>And</a><a class='struct ' href='struct.Ascend.html'>Ascend</a><a class='struct ' href='struct.At.html'>At</a><a class='struct current' href='struct.Boolean.html'>Boolean</a><a class='struct ' href='struct.BooleanEquals.html'>BooleanEquals</a><a class='struct ' href='struct.Child.html'>Child</a><a class='struct ' href='struct.Descend.html'>Descend</a><a class='struct ' href='struct.Diff.html'>Diff</a><a class='struct ' href='struct.Intersect.html'>Intersect</a><a class='struct ' href='struct.Key.html'>Key</a><a class='struct ' href='struct.List.html'>List</a><a class='struct ' href='struct.Node.html'>Node</a><a class='struct ' href='struct.Number.html'>Number</a><a class='struct ' href='struct.NumberEquals.html'>NumberEquals</a><a class='struct ' href='struct.Object.html'>Object</a><a class='struct ' href='struct.Or.html'>Or</a><a class='struct ' href='struct.Parent.html'>Parent</a><a class='struct ' href='struct.Path.html'>Path</a><a class='struct ' href='struct.String.html'>String</a><a class='struct ' href='struct.StringEquals.html'>StringEquals</a><a class='struct ' href='struct.Union.html'>Union</a><a class='struct ' href='struct.Where.html'>Where</a></div><div class='block trait'><h2>Traits</h2><a class='trait ' href='trait.JsonExt.html'>JsonExt</a><a class='trait ' href='trait.Selector.html'>Selector</a></div><div class='block fn'><h2>Functions</h2><a class='fn ' href='fn.and.html'>and</a><a class='fn ' href='fn.ascend.html'>ascend</a><a class='fn ' href='fn.at.html'>at</a><a class='fn ' href='fn.boolean.html'>boolean</a><a class='fn ' href='fn.child.html'>child</a><a class='fn ' href='fn.descend.html'>descend</a><a class='fn ' href='fn.diff.html'>diff</a><a class='fn ' href='fn.intersect.html'>intersect</a><a class='fn ' href='fn.key.html'>key</a><a class='fn ' href='fn.list.html'>list</a><a class='fn ' href='fn.node.html'>node</a><a class='fn ' href='fn.number.html'>number</a><a class='fn ' href='fn.object.html'>object</a><a class='fn ' href='fn.or.html'>or</a><a class='fn ' href='fn.parent.html'>parent</a><a class='fn ' href='fn.string.html'>string</a><a class='fn ' href='fn.union.html'>union</a><a class='fn ' href='fn.where.html'>where</a></div>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'>Struct <a href='index.html'>jlens</a>::<a class='struct' href=''>Boolean</a><a class='source' id='src-676' href='../src/jlens/src/jlens.rs.html#264-266'>[src]</a></h1>
+<pre class='rust struct'>pub struct Boolean&lt;S&gt; {
+    // some fields omitted
+}</pre><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl&lt;S: <a class='trait' href='../jlens/trait.Selector.html' title='jlens::Selector'>Selector</a>&gt; <a class='struct' href='../jlens/struct.Boolean.html' title='jlens::Boolean'>Boolean</a>&lt;S&gt;</code></h3><div class='methods'><h4 id='method.equals' class='method'><code>fn <a href='#method.equals' class='fnname'>equals</a>(self, comp: <a href='http://doc.rust-lang.org/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../jlens/struct.BooleanEquals.html' title='jlens::BooleanEquals'>BooleanEquals</a>&lt;S&gt;</code></h4>
+<div class='docblock'><p>Select current <code>json::Boolean</code> node if it is equal to <code>comp</code></p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl&lt;S: <a class='trait' href='../jlens/trait.Selector.html' title='jlens::Selector'>Selector</a>&gt; <a class='trait' href='../jlens/trait.Selector.html' title='jlens::Selector'>Selector</a> for <a class='struct' href='../jlens/struct.Boolean.html' title='jlens::Boolean'>Boolean</a>&lt;S&gt;</code></h3><div class='methods'><h4 id='method.select' class='method'><code>fn <a href='#method.select' class='fnname'>select</a>&lt;'a, 'b&gt;(&amp;self, input: <a class='struct' href='../jlens/struct.Path.html' title='jlens::Path'>Path</a>&lt;'a, 'b&gt;, f: &lt;'c&gt;|<a class='struct' href='../jlens/struct.Path.html' title='jlens::Path'>Path</a>&lt;'a, 'c&gt;|)</code></h4>
+<h4 id='method.boolean' class='method'><code>fn <a href='#method.boolean' class='fnname'>boolean</a>(self) -&gt; <a class='struct' href='../jlens/struct.Boolean.html' title='jlens::Boolean'>Boolean</a>&lt;Self&gt;</code></h4>
+<h4 id='method.number' class='method'><code>fn <a href='#method.number' class='fnname'>number</a>(self) -&gt; <a class='struct' href='../jlens/struct.Number.html' title='jlens::Number'>Number</a>&lt;Self&gt;</code></h4>
+<h4 id='method.string' class='method'><code>fn <a href='#method.string' class='fnname'>string</a>(self) -&gt; <a class='struct' href='../jlens/struct.String.html' title='jlens::String'>String</a>&lt;Self&gt;</code></h4>
+<h4 id='method.object' class='method'><code>fn <a href='#method.object' class='fnname'>object</a>(self) -&gt; <a class='struct' href='../jlens/struct.Object.html' title='jlens::Object'>Object</a>&lt;Self&gt;</code></h4>
+<h4 id='method.list' class='method'><code>fn <a href='#method.list' class='fnname'>list</a>(self) -&gt; <a class='struct' href='../jlens/struct.List.html' title='jlens::List'>List</a>&lt;Self&gt;</code></h4>
+<h4 id='method.at' class='method'><code>fn <a href='#method.at' class='fnname'>at</a>(self, index: <a href='http://doc.rust-lang.org/std/primitive.uint.html'>uint</a>) -&gt; <a class='struct' href='../jlens/struct.At.html' title='jlens::At'>At</a>&lt;Self&gt;</code></h4>
+<h4 id='method.key' class='method'><code>fn <a href='#method.key' class='fnname'>key</a>&lt;'a&gt;(self, name: &amp;'a <a href='http://doc.rust-lang.org/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../jlens/struct.Key.html' title='jlens::Key'>Key</a>&lt;'a, Self&gt;</code></h4>
+<h4 id='method.child' class='method'><code>fn <a href='#method.child' class='fnname'>child</a>(self) -&gt; <a class='struct' href='../jlens/struct.Child.html' title='jlens::Child'>Child</a>&lt;Self&gt;</code></h4>
+<h4 id='method.parent' class='method'><code>fn <a href='#method.parent' class='fnname'>parent</a>(self) -&gt; <a class='struct' href='../jlens/struct.Parent.html' title='jlens::Parent'>Parent</a>&lt;Self&gt;</code></h4>
+<h4 id='method.descend' class='method'><code>fn <a href='#method.descend' class='fnname'>descend</a>(self) -&gt; <a class='struct' href='../jlens/struct.Descend.html' title='jlens::Descend'>Descend</a>&lt;Self&gt;</code></h4>
+<h4 id='method.ascend' class='method'><code>fn <a href='#method.ascend' class='fnname'>ascend</a>(self) -&gt; <a class='struct' href='../jlens/struct.Ascend.html' title='jlens::Ascend'>Ascend</a>&lt;Self&gt;</code></h4>
+<h4 id='method.where' class='method'><code>fn <a href='#method.where' class='fnname'>where</a>&lt;T: <a class='trait' href='../jlens/trait.Selector.html' title='jlens::Selector'>Selector</a>&gt;(self, filter: T) -&gt; <a class='struct' href='../jlens/struct.Where.html' title='jlens::Where'>Where</a>&lt;Self, T&gt;</code></h4>
+<h4 id='method.union' class='method'><code>fn <a href='#method.union' class='fnname'>union</a>&lt;T1: <a class='trait' href='../jlens/trait.Selector.html' title='jlens::Selector'>Selector</a>, T2: <a class='trait' href='../jlens/trait.Selector.html' title='jlens::Selector'>Selector</a>&gt;(self, left: T1, right: T2) -&gt; <a class='struct' href='../jlens/struct.Union.html' title='jlens::Union'>Union</a>&lt;Self, T1, T2&gt;</code></h4>
+<h4 id='method.intersect' class='method'><code>fn <a href='#method.intersect' class='fnname'>intersect</a>&lt;T1: <a class='trait' href='../jlens/trait.Selector.html' title='jlens::Selector'>Selector</a>, T2: <a class='trait' href='../jlens/trait.Selector.html' title='jlens::Selector'>Selector</a>&gt;(self, left: T1, right: T2) -&gt; <a class='struct' href='../jlens/struct.Intersect.html' title='jlens::Intersect'>Intersect</a>&lt;Self, T1, T2&gt;</code></h4>
+<h4 id='method.diff' class='method'><code>fn <a href='#method.diff' class='fnname'>diff</a>&lt;T1: <a class='trait' href='../jlens/trait.Selector.html' title='jlens::Selector'>Selector</a>, T2: <a class='trait' href='../jlens/trait.Selector.html' title='jlens::Selector'>Selector</a>&gt;(self, left: T1, right: T2) -&gt; <a class='struct' href='../jlens/struct.Diff.html' title='jlens::Diff'>Diff</a>&lt;Self, T1, T2&gt;</code></h4>
+<h4 id='method.and' class='method'><code>fn <a href='#method.and' class='fnname'>and</a>&lt;T1: <a class='trait' href='../jlens/trait.Selector.html' title='jlens::Selector'>Selector</a>, T2: <a class='trait' href='../jlens/trait.Selector.html' title='jlens::Selector'>Selector</a>&gt;(self, left: T1, right: T2) -&gt; <a class='struct' href='../jlens/struct.And.html' title='jlens::And'>And</a>&lt;Self, T1, T2&gt;</code></h4>
+<h4 id='method.or' class='method'><code>fn <a href='#method.or' class='fnname'>or</a>&lt;T1: <a class='trait' href='../jlens/trait.Selector.html' title='jlens::Selector'>Selector</a>, T2: <a class='trait' href='../jlens/trait.Selector.html' title='jlens::Selector'>Selector</a>&gt;(self, left: T1, right: T2) -&gt; <a class='struct' href='../jlens/struct.Or.html' title='jlens::Or'>Or</a>&lt;Self, T1, T2&gt;</code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code> (or <code>str</code>), <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "jlens";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script async src="../search-index.js"></script>
+</body>
+</html>
