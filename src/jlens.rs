@@ -410,9 +410,13 @@ pub struct Parent<S> {
 
 impl<S:Selector> Selector for Parent<S> {
     fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+        let mut seen = hashmap::HashSet::new();
         self.inner.select(input, |x| {
             match x {
-                Path(_,Some(&p)) => f(p),
+                Path(_,Some(&p@Path(j,_))) if !seen.contains(&(j as *json::Json)) => {
+                    seen.insert(j as *json::Json);
+                    f(p)
+                }
                 _ => ()
             }
         })
@@ -463,10 +467,12 @@ pub struct Ascend<S> {
 
 impl<S:Selector> Selector for Ascend<S> {
     fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+        let mut seen = hashmap::HashSet::new();
         self.inner.select(input, |mut n| {
             loop {
                 match n {
-                    Path(_,Some(&x)) => {
+                    Path(_,Some(&x@Path(j,_))) if !seen.contains(&(j as *json::Json)) => {
+                        seen.insert(j as *json::Json);
                         f(x);
                         n = x;
                     },
@@ -781,5 +787,35 @@ r#"
         assert_eq!(matches.len(), 2);
         assert!(matches.contains(& &match1));
         assert!(matches.contains(& &match2));
+    }
+
+    #[test]
+    fn parent_unique() {
+        let json = json::from_str(r#"[{},{},{},{}]"#).unwrap();
+
+        let matches = json.query(child().parent());
+        assert_eq!(matches.len(), 1);
+
+        let matches = json.query(child().parent().child());
+        assert_eq!(matches.len(), 4);
+    }
+
+    #[test]
+    fn ascend_unique() {
+        let json = json::from_str(r#"[[{}],[{}],[{}],[{}]]"#).unwrap();
+
+        let matches = json.query(child().child().ascend());
+        assert_eq!(matches.len(), 5);
+    }
+
+    #[test]
+    fn union_unique() {
+        let json = json::from_str(r#"[[1],[2],[3],[1,2]]"#).unwrap();
+
+        let matches = json.query(
+            child().union(
+                where(child().number().equals(1f64)),
+                where(child().number().equals(2f64))));
+        assert_eq!(matches.len(), 3);
     }
 }
