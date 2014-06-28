@@ -15,4 +15,4 @@ doc: src/jlens.rs
 clean:
 	rm -rf target jlens doc
 
-.PHONY: all test clean
+.PHONY: all test clean cargo-build
