@@ -15,7 +15,46 @@
 //! node, while `node().child().child()` selects all children of the
 //! children of the initial node, and so on.  By continuing to chain
 //! method calls in this manner, a selector object representing a
-//! complex query expression can be built up.
+//! complex query expression can be built up.  Example:
+//!
+//! ```
+//! // Test JSON document
+//! let json = json::from_str(r#"
+//! [
+//!    {
+//!        "foo": ["Hello, world!", 3.14, false]
+//!    },
+//!    {
+//!        "foo": [42, true]
+//!    },
+//!    {
+//!        "foo": "Nope"
+//!    },
+//!    {
+//!        "bar": [42, "Hello, world!"]
+//!    }
+//! ]"#).unwrap();
+//!
+//! // Given a list, match all objects in it that
+//! // have a "foo" key where the value is a list
+//! // that contains either the string "Hello, world!"
+//! // or the number 42
+//! let matches = json.query(
+//!     list().child().where(
+//!         key("foo").list().child().or(
+//!             string().equals("Hello, world!"),
+//!             number().equals(42f64))));
+//!
+//! // Expected matches
+//! let match1 = json::from_str(
+//!     r#"{"foo": ["Hello, world!", 3.14, false]}"#).unwrap();
+//! let match2 = json::from_str(
+//!     r#"{"foo": [42, true]}"#).unwrap();
+//!
+//! assert_eq!(matches.len(), 2);
+//! assert!(matches.contains(& &match1));
+//! assert!(matches.contains(& &match2));
+//! ```
 //!
 //! The `JsonExt` trait provides a convenience method on `Json`
 //! objects which runs a selector and returns a `Vec<&'self Json>` of
