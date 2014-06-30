@@ -1,18 +1,13 @@
-all: cargo-build
-
-cargo-build:
+all:
 	cargo build
 
-test: jlens
-	./jlens
-
-jlens: src/jlens.rs
-	rustc --test src/jlens.rs
+test:
+	cargo test
 
 doc: src/jlens.rs
 	rustdoc -o $@ $<
 
 clean:
-	rm -rf target jlens doc
+	rm -rf target doc
 
-.PHONY: all test clean cargo-build
+.PHONY: all test clean
