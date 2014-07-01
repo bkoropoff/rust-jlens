@@ -9,7 +9,7 @@ install:
   - sudo apt-get install rust-nightly cargo
 script:
   - cargo build
-  - cargo test
+  - make test
   - make doc
 after_script:
   - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
