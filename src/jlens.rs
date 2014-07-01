@@ -407,7 +407,7 @@ impl<'f,S:Selector> Selector for Key<'f,S> {
     fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                Path(&json::Object(box ref m),_) => {
+                Path(&json::Object(ref m),_) => {
                     match m.find(&self.name.to_string()) {
                         Some(e) => f(Path(e,Some(&x))),
                         _ => ()
@@ -427,7 +427,7 @@ impl<S:Selector> Selector for Child<S> {
     fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                Path(&json::Object(box ref m),_) => {
+                Path(&json::Object(ref m),_) => {
                     for (_,child) in m.iter() {
                         f(Path(child,Some(&x)))
                     }
@@ -472,7 +472,7 @@ fn descend_helper<'a,'b>(input@Path(j,_): Path<'a,'b>,
     if !seen.contains(&(j as *const json::Json)) {
         seen.insert(j as *const json::Json);
         match j {
-            &json::Object(box ref m) => {
+            &json::Object(ref m) => {
                 for (_,c) in m.iter() {
                     let inner = Path(c,Some(&input));
                     f(inner);
