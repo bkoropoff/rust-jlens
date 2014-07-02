@@ -115,6 +115,11 @@ pub trait Selector {
         List { inner: self }
     }
 
+    /// Select current node if it is a `json::Null`
+    fn null(self) -> Null<Self> {
+        Null { inner: self }
+    }
+
     /// Select list element
     ///
     /// If the current node is a `json::List` of at
@@ -372,6 +377,21 @@ impl<S:Selector> Selector for NumberEquals<S> {
         self.inner.select(input, |x| {
             match x {
                 Path(&json::Number(b),_) if b == self.comp => f(x),
+                _ => ()
+            }
+        })
+    }
+}
+
+pub struct Null<S> {
+    inner: S
+}
+
+impl<S:Selector> Selector for Null<S> {
+    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+        self.inner.select(input, |x| {
+            match x {
+                Path(&json::Null,_) => f(x),
                 _ => ()
             }
         })
@@ -721,6 +741,11 @@ pub fn list() -> List<Node> {
     node().list()
 }
 
+/// Shorthand for `node().null()`
+pub fn null() -> Null<Node> {
+    node().null()
+}
+
 /// Shorthand for `node().child()`
 pub fn child() -> Child<Node> {
     node().child()
@@ -856,5 +881,13 @@ r#"
                 where(child().number().equals(1f64)),
                 where(child().number().equals(2f64))));
         assert_eq!(matches.len(), 3);
+    }
+
+    #[test]
+    fn null() {
+        let json = json::from_str(r#"[{},null,{},null,{}]"#).unwrap();
+
+        let matches = json.query(child().null());
+        assert_eq!(matches.len(), 2);
     }
 }
