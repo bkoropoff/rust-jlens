@@ -10,7 +10,7 @@ install:
   - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/rust/rust-nightly/lib
 script:
   - cargo build
-  - make test
+  - cargo test
   - make doc
 after_script:
   - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
