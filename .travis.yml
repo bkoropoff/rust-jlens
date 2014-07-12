@@ -7,6 +7,7 @@ before_install:
   - sudo apt-get update
 install:
   - sudo apt-get install rust-nightly cargo
+  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/rust/rust-nightly/lib
 script:
   - cargo build
   - make test
