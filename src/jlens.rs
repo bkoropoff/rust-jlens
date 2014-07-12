@@ -61,7 +61,6 @@
 //! results.
 
 #![crate_type = "rlib"]
-#![crate_id = "jlens#0.0.1"]
 #![feature(globs)]
 
 extern crate serialize;
