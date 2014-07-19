@@ -408,7 +408,7 @@ impl<S:Selector> Selector for At<S> {
             match x {
                 Path(&json::List(ref v),_) => {
                     if v.len() > self.index {
-                        f(Path(v.get(self.index),Some(&x)))
+                        f(Path(&v[self.index],Some(&x)))
                     }
                 }
                 _ => ()
