@@ -427,7 +427,7 @@ impl<'f,S:Selector> Selector for Key<'f,S> {
         self.inner.select(input, |x| {
             match x {
                 Path(&json::Object(ref m),_) => {
-                    match m.find(&self.name.to_string()) {
+                    match m.find_with(|k| k.as_slice().cmp(&self.name)) {
                         Some(e) => f(Path(e,Some(&x))),
                         _ => ()
                     }
