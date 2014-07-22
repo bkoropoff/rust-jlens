@@ -133,7 +133,7 @@ pub trait Selector {
     /// If the current node is a `json::Object` that contains
     /// the key `name`, its value is selected.  Otherwise no
     /// nodes are selected.
-    fn key<'a>(self, name: &'a str) -> Key<'a, Self> {
+    fn key(self, name: &str) -> Key<Self> {
         Key { inner: self, name: name }
     }
 
@@ -276,7 +276,7 @@ pub struct StringEquals<'a,S> {
 
 impl<S:Selector> String<S> {
     /// Select current `json::String` node if it is equal to `comp`
-    pub fn equals<'a,'b>(self, comp: &'a str) -> StringEquals<'a,S> {
+    pub fn equals(self, comp: &str) -> StringEquals<S> {
         let String { inner: inner } = self;
         StringEquals { inner: inner, comp: comp }
     }
@@ -688,11 +688,11 @@ pub trait JsonExt {
     /// Runs the query represented by the selector `s`
     /// against the JSON document, accumulating and
     /// returning the results in a new vector.
-    fn query<'a,S:Selector>(&'a self, s: S) -> Vec<&'a json::Json>;
+    fn query<S:Selector>(&self, s: S) -> Vec<&json::Json>;
 }
 
 impl JsonExt for json::Json {
-    fn query<'a,S:Selector>(&'a self, s: S) -> Vec<&'a json::Json> {
+    fn query<S:Selector>(&self, s: S) -> Vec<&json::Json> {
         let mut outvec = Vec::new();
         {
             let output = &mut outvec;
