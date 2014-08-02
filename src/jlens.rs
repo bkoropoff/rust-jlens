@@ -471,9 +471,12 @@ impl<S:Selector> Selector for Parent<S> {
         let mut seen = hashmap::HashSet::new();
         self.inner.select(input, |x| {
             match x {
-                Path(_,Some(&p@Path(j,_))) if !seen.contains(&(j as *const json::Json)) => {
-                    seen.insert(j as *const json::Json);
-                    f(p)
+                Path(_,Some(&p)) => {
+                    let Path(j,_) = p;
+                    if !seen.contains(&(j as *const json::Json)) {
+                        seen.insert(j as *const json::Json);
+                        f(p)
+                    }
                 }
                 _ => ()
             }
@@ -485,9 +488,10 @@ pub struct Descend<S> {
     inner: S
 }
 
-fn descend_helper<'a,'b>(input@Path(j,_): Path<'a,'b>,
+fn descend_helper<'a,'b>(input: Path<'a,'b>,
                          seen: &mut hashmap::HashSet<*const json::Json>,
                          f: <'c>|Path<'a,'c>|) {
+    let Path(j,_) = input;
     if !seen.contains(&(j as *const json::Json)) {
         seen.insert(j as *const json::Json);
         match j {
@@ -529,10 +533,15 @@ impl<S:Selector> Selector for Ascend<S> {
         self.inner.select(input, |mut n| {
             loop {
                 match n {
-                    Path(_,Some(&x@Path(j,_))) if !seen.contains(&(j as *const json::Json)) => {
-                        seen.insert(j as *const json::Json);
-                        f(x);
-                        n = x;
+                    Path(_,Some(&x)) => {
+                        let Path(j,_) = x;
+                        if !seen.contains(&(j as *const json::Json)) {
+                            seen.insert(j as *const json::Json);
+                            f(x);
+                            n = x;
+                        } else {
+                            break;
+                        }
                     },
                     _ => break
                 }
@@ -568,13 +577,15 @@ impl<I:Selector,S:Selector,T:Selector> Selector for Union<I,S,T> {
     fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
         let mut seen = hashmap::HashSet::new();
         self.inner.select(input, |x| {
-            self.left.select(x, |x@Path(j,_)| {
+            self.left.select(x, |x| {
+                let Path(j,_) = x;
                 if !seen.contains(&(j as *const json::Json)) {
                     seen.insert(j as *const json::Json);
                     f(x)
                 }
             });
-            self.right.select(x, |x@Path(j,_)| {
+            self.right.select(x, |x| {
+                let Path(j,_) = x;
                 if !seen.contains(&(j as *const json::Json)) {
                     seen.insert(j as *const json::Json);
                     f(x)
@@ -595,13 +606,15 @@ impl<I:Selector,S:Selector,T:Selector> Selector for Intersect<I,S,T> {
         let mut seen_left = hashmap::HashSet::new();
         let mut seen_right = hashmap::HashSet::new();
         self.inner.select(input, |x| {
-            self.left.select(x, |Path(j,_)| {
+            self.left.select(x, |x| {
+                let Path(j,_) = x;
                 seen_left.insert(j as *const json::Json);
                 if seen_right.contains(&(j as *const json::Json)) {
                     f(x)
                 }
             });
-            self.right.select(x, |x@Path(j,_)| {
+            self.right.select(x, |x| {
+                let Path(j,_) = x;
                 seen_right.insert(j as *const json::Json);
                 if seen_left.contains(&(j as *const json::Json)) {
                     f(x)
@@ -630,7 +643,8 @@ impl<I:Selector,S:Selector,T:Selector> Selector for Diff<I,S,T> {
             })
         });
         self.inner.select(input, |x| {
-            self.left.select(x, |x@Path(j,_)| {
+            self.left.select(x, |x| {
+                let Path(j,_) = x;
                 if !seen.contains(&(j as *const json::Json)) {
                     f(x)
                 }
