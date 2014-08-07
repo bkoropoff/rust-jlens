@@ -17,7 +17,7 @@
 //! method calls in this manner, a selector object representing a
 //! complex query expression can be built up.  Example:
 //!
-//! ```
+//! ```ignore
 //! // Test JSON document
 //! let json = json::from_str(r#"
 //! [
