@@ -17,7 +17,13 @@
 //! method calls in this manner, a selector object representing a
 //! complex query expression can be built up.  Example:
 //!
-//! ```ignore
+//! ```
+//! # #![feature(globs)]
+//! # extern crate serialize;
+//! # extern crate jlens;
+//! # use serialize::json;
+//! # use jlens::*;
+//! # fn main() {
 //! // Test JSON document
 //! let json = json::from_str(r#"
 //! [
@@ -54,6 +60,7 @@
 //! assert_eq!(matches.len(), 2);
 //! assert!(matches.contains(& &match1));
 //! assert!(matches.contains(& &match2));
+//! # }
 //! ```
 //!
 //! The `JsonExt` trait provides a convenience method on `Json`
@@ -823,48 +830,6 @@ pub fn or<T1:Selector,T2:Selector>(left: T1, right: T2) -> Or<Node,T1,T2> {
 mod test {
     use super::*;
     use serialize::json;
-
-    #[test]
-    fn basic() {
-        // Test JSON document
-        let json = json::from_str(
-r#"
-[
-    {
-        "foo": ["Hello, world!", 3.14, false]
-    },
-    {
-        "foo": [42, true]
-    },
-    {
-        "foo": "Nope"
-    },
-    {
-        "bar": [42, "Hello, world!"]
-    }
-]
-"#).unwrap();
-
-        // Given a list, match all objects in it that
-        // have a "foo" key where the value is a list
-        // that contains either the string "Hello, world!"
-        // or the number 42
-        let matches = json.query(
-            list().child().where(
-                key("foo").list().child().or(
-                    string().equals("Hello, world!"),
-                    number().equals(42f64))));
-
-        // Expected matches
-        let match1 = json::from_str(
-            r#"{"foo": ["Hello, world!", 3.14, false]}"#).unwrap();
-        let match2 = json::from_str(
-            r#"{"foo": [42, true]}"#).unwrap();
-
-        assert_eq!(matches.len(), 2);
-        assert!(matches.contains(& &match1));
-        assert!(matches.contains(& &match2));
-    }
 
     #[test]
     fn parent_unique() {
