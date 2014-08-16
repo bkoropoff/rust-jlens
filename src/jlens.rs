@@ -46,7 +46,7 @@
 //! // that contains either the string "Hello, world!"
 //! // or the number 42
 //! let matches = json.query(
-//!     list().child().where(
+//!     list().child().wherein(
 //!         key("foo").list().child().or(
 //!             string().equals("Hello, world!"),
 //!             number().equals(42f64))));
@@ -179,8 +179,8 @@ pub trait Selector {
     /// Runs the selector `filter` on the current node.  If it selects
     /// any nodes, the current node is selected.  If it does not select
     /// any nodes, no nodes are selected.
-    fn where<T:Selector>(self, filter: T) -> Where<Self,T> {
-        Where { inner: self, filter: filter }
+    fn wherein<T:Selector>(self, filter: T) -> Wherein<Self,T> {
+        Wherein { inner: self, filter: filter }
     }
 
     /// Select union of two selectors
@@ -557,12 +557,12 @@ impl<S:Selector> Selector for Ascend<S> {
     }
 }
 
-pub struct Where<S,T> {
+pub struct Wherein<S,T> {
     inner: S,
     filter: T
 }
 
-impl<S:Selector,T:Selector> Selector for Where<S,T> {
+impl<S:Selector,T:Selector> Selector for Wherein<S,T> {
     fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
         self.inner.select(input, |x| {
             let mut matches = false;
@@ -796,9 +796,9 @@ pub fn key<'a>(name: &'a str) -> Key<'a, Node> {
     node().key(name)
 }
 
-/// Shorthand for `node().where(filter)`
-pub fn where<T:Selector>(filter: T) -> Where<Node,T> {
-    node().where(filter)
+/// Shorthand for `node().wherein(filter)`
+pub fn wherein<T:Selector>(filter: T) -> Wherein<Node,T> {
+    node().wherein(filter)
 }
 
 /// Shorthand for `node().intersect(left, right)`
@@ -856,8 +856,8 @@ mod test {
 
         let matches = json.query(
             child().union(
-                where(child().number().equals(1f64)),
-                where(child().number().equals(2f64))));
+                wherein(child().number().equals(1f64)),
+                wherein(child().number().equals(2f64))));
         assert_eq!(matches.len(), 3);
     }
 
