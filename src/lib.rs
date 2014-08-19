@@ -68,7 +68,6 @@
 //! results.
 
 #![crate_type = "rlib"]
-#![feature(globs)]
 
 extern crate serialize;
 
@@ -82,7 +81,7 @@ use std::collections::hashmap;
 /// reference to a path to the parent node.  This
 /// optional parent path should be `None` only for the root
 /// node of a `Json` object.
-pub struct Path<'a,'b>(pub &'a json::Json, pub Option<&'b Path<'a,'b>>);
+pub struct JsonPath<'a,'b>(pub &'a json::Json, pub Option<&'b JsonPath<'a,'b>>);
 
 /// JSON selector trait
 ///
@@ -94,36 +93,36 @@ pub trait Selector {
     /// Given the path to a single node, `input`, this
     /// method should identify nodes to be selected and
     /// invoke the closure `f` with a path to each.
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|);
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|);
 
     /// Select current node if it is a `json::Boolean`
-    fn boolean(self) -> Boolean<Self> {
-        Boolean { inner: self }
+    fn boolean(self) -> BooleanSel<Self> {
+        BooleanSel { inner: self }
     }
 
-    /// Select current node if it is a `json::Number`
-    fn number(self) -> Number<Self> {
-        Number { inner: self }
+    /// Select current node if it is a `json::NumberSel`
+    fn number(self) -> NumberSel<Self> {
+        NumberSel { inner: self }
     }
 
     /// Select current node if it is a `json::String`
-    fn string(self) -> String<Self> {
-        String { inner: self }
+    fn string(self) -> StringSel<Self> {
+        StringSel { inner: self }
     }
 
     /// Select current node if it is a `json::Object`
-    fn object(self) -> Object<Self> {
-        Object { inner: self }
+    fn object(self) -> ObjectSel<Self> {
+        ObjectSel { inner: self }
     }
 
     /// Select current node if it is a `json::List`
-    fn list(self) -> List<Self> {
-        List { inner: self }
+    fn list(self) -> ListSel<Self> {
+        ListSel { inner: self }
     }
 
     /// Select current node if it is a `json::Null`
-    fn null(self) -> Null<Self> {
-        Null { inner: self }
+    fn null(self) -> NullSel<Self> {
+        NullSel { inner: self }
     }
 
     /// Select list element
@@ -217,8 +216,8 @@ pub trait Selector {
     /// selects an arbitrary node if both selected at
     /// least one node themselves.  This is useful for
     /// encoding logical-and conditions for `which`.
-    fn and<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> And<Self,T1,T2> {
-        And { inner: self, left: left, right: right }
+    fn and<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> AndSel<Self,T1,T2> {
+        AndSel { inner: self, left: left, right: right }
     }
 
     /// Select logical-or of two selectors
@@ -227,8 +226,8 @@ pub trait Selector {
     /// selects an arbitrary node if either selected at
     /// least one node themselves.  This is useful for
     /// encoding logical-and conditions for `which`.
-    fn or<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Or<Self,T1,T2> {
-        Or { inner: self, left: left, right: right }
+    fn or<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> OrSel<Self,T1,T2> {
+        OrSel { inner: self, left: left, right: right }
     }
 }
 
@@ -237,42 +236,42 @@ pub struct Node {
 }
 
 impl<'f> Selector for Node {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         f(input)
     }
 }
 
-pub struct Object<S> {
+pub struct ObjectSel<S> {
     inner: S
 }
 
-impl<S:Selector> Selector for Object<S> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+impl<S:Selector> Selector for ObjectSel<S> {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                Path(&json::Object(..),_) => f(x),
+                JsonPath(&json::Object(..),_) => f(x),
                 _ => ()
             }
         })
     }
 }
 
-pub struct List<S> {
+pub struct ListSel<S> {
     inner: S
 }
 
-impl<S:Selector> Selector for List<S> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+impl<S:Selector> Selector for ListSel<S> {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                Path(&json::List(..),_) => f(x),
+                JsonPath(&json::List(..),_) => f(x),
                 _ => ()
             }
         })
     }
 }
 
-pub struct String<S> {
+pub struct StringSel<S> {
     inner: S
 }
 
@@ -281,19 +280,19 @@ pub struct StringEquals<'a,S> {
     comp: &'a str
 }
 
-impl<S:Selector> String<S> {
+impl<S:Selector> StringSel<S> {
     /// Select current `json::String` node if it is equal to `comp`
     pub fn equals(self, comp: &str) -> StringEquals<S> {
-        let String { inner: inner } = self;
+        let StringSel { inner: inner } = self;
         StringEquals { inner: inner, comp: comp }
     }
 }
 
-impl<S:Selector> Selector for String<S> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+impl<S:Selector> Selector for StringSel<S> {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                Path(&json::String(..),_) => f(x),
+                JsonPath(&json::String(..),_) => f(x),
                 _ => ()
             }
         })
@@ -301,17 +300,17 @@ impl<S:Selector> Selector for String<S> {
 }
 
 impl<'a,S:Selector> Selector for StringEquals<'a,S> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                Path(&json::String(ref s),_) if self.comp.equiv(s) => f(x),
+                JsonPath(&json::String(ref s),_) if self.comp.equiv(s) => f(x),
                 _ => ()
             }
         })
     }
 }
 
-pub struct Boolean<S> {
+pub struct BooleanSel<S> {
     inner: S
 }
 
@@ -320,19 +319,19 @@ pub struct BooleanEquals<S> {
     comp: bool
 }
 
-impl<S:Selector> Boolean<S> {
+impl<S:Selector> BooleanSel<S> {
     /// Select current `json::Boolean` node if it is equal to `comp`
     pub fn equals(self, comp: bool) -> BooleanEquals<S> {
-        let Boolean { inner: inner } = self;
+        let BooleanSel { inner: inner } = self;
         BooleanEquals { inner: inner, comp: comp }
     }
 }
 
-impl<S:Selector> Selector for Boolean<S> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+impl<S:Selector> Selector for BooleanSel<S> {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                Path(&json::Boolean(..),_) => f(x),
+                JsonPath(&json::Boolean(..),_) => f(x),
                 _ => ()
             }
         })
@@ -340,17 +339,17 @@ impl<S:Selector> Selector for Boolean<S> {
 }
 
 impl<S:Selector> Selector for BooleanEquals<S> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                Path(&json::Boolean(b),_) if b == self.comp => f(x),
+                JsonPath(&json::Boolean(b),_) if b == self.comp => f(x),
                 _ => ()
             }
         })
     }
 }
 
-pub struct Number<S> {
+pub struct NumberSel<S> {
     inner: S
 }
 
@@ -359,19 +358,19 @@ pub struct NumberEquals<S> {
     comp: f64
 }
 
-impl<S:Selector> Number<S> {
+impl<S:Selector> NumberSel<S> {
     pub fn equals(self, comp: f64) -> NumberEquals<S> {
-        let Number { inner: inner } = self;
+        let NumberSel { inner: inner } = self;
         NumberEquals { inner: inner, comp: comp }
     }
 }
 
-impl<S:Selector> Selector for Number<S> {
+impl<S:Selector> Selector for NumberSel<S> {
     /// Select current `json::Number` node if it is equal to `comp`
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                Path(&json::Number(..),_) => f(x),
+                JsonPath(&json::Number(..),_) => f(x),
                 _ => ()
             }
         })
@@ -379,25 +378,25 @@ impl<S:Selector> Selector for Number<S> {
 }
 
 impl<S:Selector> Selector for NumberEquals<S> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                Path(&json::Number(b),_) if b == self.comp => f(x),
+                JsonPath(&json::Number(b),_) if b == self.comp => f(x),
                 _ => ()
             }
         })
     }
 }
 
-pub struct Null<S> {
+pub struct NullSel<S> {
     inner: S
 }
 
-impl<S:Selector> Selector for Null<S> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+impl<S:Selector> Selector for NullSel<S> {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                Path(&json::Null,_) => f(x),
+                JsonPath(&json::Null,_) => f(x),
                 _ => ()
             }
         })
@@ -410,12 +409,12 @@ pub struct At<S> {
 }
 
 impl<S:Selector> Selector for At<S> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                Path(&json::List(ref v),_) => {
+                JsonPath(&json::List(ref v),_) => {
                     if v.len() > self.index {
-                        f(Path(&v[self.index],Some(&x)))
+                        f(JsonPath(&v[self.index],Some(&x)))
                     }
                 }
                 _ => ()
@@ -430,12 +429,12 @@ pub struct Key<'f,S> {
 }
 
 impl<'f,S:Selector> Selector for Key<'f,S> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                Path(&json::Object(ref m),_) => {
+                JsonPath(&json::Object(ref m),_) => {
                     match m.find_with(|k| k.as_slice().cmp(&self.name)) {
-                        Some(e) => f(Path(e,Some(&x))),
+                        Some(e) => f(JsonPath(e,Some(&x))),
                         _ => ()
                     }
                 },
@@ -450,17 +449,17 @@ pub struct Child<S> {
 }
 
 impl<S:Selector> Selector for Child<S> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                Path(&json::Object(ref m),_) => {
+                JsonPath(&json::Object(ref m),_) => {
                     for (_,child) in m.iter() {
-                        f(Path(child,Some(&x)))
+                        f(JsonPath(child,Some(&x)))
                     }
                 },
-                Path(&json::List(ref v),_) => {
+                JsonPath(&json::List(ref v),_) => {
                     for child in v.iter() {
-                        f(Path(child,Some(&x)))
+                        f(JsonPath(child,Some(&x)))
                     }
                 },
                 _ => ()
@@ -474,12 +473,12 @@ pub struct Parent<S> {
 }
 
 impl<S:Selector> Selector for Parent<S> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         let mut seen = hashmap::HashSet::new();
         self.inner.select(input, |x| {
             match x {
-                Path(_,Some(&p)) => {
-                    let Path(j,_) = p;
+                JsonPath(_,Some(&p)) => {
+                    let JsonPath(j,_) = p;
                     if !seen.contains(&(j as *const json::Json)) {
                         seen.insert(j as *const json::Json);
                         f(p)
@@ -495,23 +494,23 @@ pub struct Descend<S> {
     inner: S
 }
 
-fn descend_helper<'a,'b>(input: Path<'a,'b>,
+fn descend_helper<'a,'b>(input: JsonPath<'a,'b>,
                          seen: &mut hashmap::HashSet<*const json::Json>,
-                         f: <'c>|Path<'a,'c>|) {
-    let Path(j,_) = input;
+                         f: <'c>|JsonPath<'a,'c>|) {
+    let JsonPath(j,_) = input;
     if !seen.contains(&(j as *const json::Json)) {
         seen.insert(j as *const json::Json);
         match j {
             &json::Object(ref m) => {
                 for (_,c) in m.iter() {
-                    let inner = Path(c,Some(&input));
+                    let inner = JsonPath(c,Some(&input));
                     f(inner);
                     descend_helper(inner, seen, |x| f(x))
                 }
             },
             &json::List(ref v) => {
                 for c in v.iter() {
-                    let inner = Path(c,Some(&input));
+                    let inner = JsonPath(c,Some(&input));
                     f(inner);
                     descend_helper(inner, seen, |x| f(x))
                 }
@@ -522,7 +521,7 @@ fn descend_helper<'a,'b>(input: Path<'a,'b>,
 }
 
 impl<S:Selector> Selector for Descend<S> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         let mut seen = hashmap::HashSet::new();
         self.inner.select(input, |x| {
             descend_helper(x, &mut seen, |x| f(x))
@@ -535,13 +534,13 @@ pub struct Ascend<S> {
 }
 
 impl<S:Selector> Selector for Ascend<S> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         let mut seen = hashmap::HashSet::new();
         self.inner.select(input, |mut n| {
             loop {
                 match n {
-                    Path(_,Some(&x)) => {
-                        let Path(j,_) = x;
+                    JsonPath(_,Some(&x)) => {
+                        let JsonPath(j,_) = x;
                         if !seen.contains(&(j as *const json::Json)) {
                             seen.insert(j as *const json::Json);
                             f(x);
@@ -563,7 +562,7 @@ pub struct Wherein<S,T> {
 }
 
 impl<S:Selector,T:Selector> Selector for Wherein<S,T> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             let mut matches = false;
             self.filter.select(x, |_| matches = true);
@@ -581,18 +580,18 @@ pub struct Union<I,S,T> {
 }
 
 impl<I:Selector,S:Selector,T:Selector> Selector for Union<I,S,T> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         let mut seen = hashmap::HashSet::new();
         self.inner.select(input, |x| {
             self.left.select(x, |x| {
-                let Path(j,_) = x;
+                let JsonPath(j,_) = x;
                 if !seen.contains(&(j as *const json::Json)) {
                     seen.insert(j as *const json::Json);
                     f(x)
                 }
             });
             self.right.select(x, |x| {
-                let Path(j,_) = x;
+                let JsonPath(j,_) = x;
                 if !seen.contains(&(j as *const json::Json)) {
                     seen.insert(j as *const json::Json);
                     f(x)
@@ -609,19 +608,19 @@ pub struct Intersect<I,S,T> {
 }
 
 impl<I:Selector,S:Selector,T:Selector> Selector for Intersect<I,S,T> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         let mut seen_left = hashmap::HashSet::new();
         let mut seen_right = hashmap::HashSet::new();
         self.inner.select(input, |x| {
             self.left.select(x, |x| {
-                let Path(j,_) = x;
+                let JsonPath(j,_) = x;
                 seen_left.insert(j as *const json::Json);
                 if seen_right.contains(&(j as *const json::Json)) {
                     f(x)
                 }
             });
             self.right.select(x, |x| {
-                let Path(j,_) = x;
+                let JsonPath(j,_) = x;
                 seen_right.insert(j as *const json::Json);
                 if seen_left.contains(&(j as *const json::Json)) {
                     f(x)
@@ -642,16 +641,16 @@ pub struct Diff<I,S,T> {
 // because the path breadcrumbs have a lifetime that
 // can't escape the callback
 impl<I:Selector,S:Selector,T:Selector> Selector for Diff<I,S,T> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         let mut seen = hashmap::HashSet::new();
         self.inner.select(input, |x| {
-            self.right.select(x, |Path(j,_)| {
+            self.right.select(x, |JsonPath(j,_)| {
                 seen.insert(j as *const json::Json);
             })
         });
         self.inner.select(input, |x| {
             self.left.select(x, |x| {
-                let Path(j,_) = x;
+                let JsonPath(j,_) = x;
                 if !seen.contains(&(j as *const json::Json)) {
                     f(x)
                 }
@@ -660,7 +659,7 @@ impl<I:Selector,S:Selector,T:Selector> Selector for Diff<I,S,T> {
     }
 }
 
-pub struct And<I,S,T> {
+pub struct AndSel<I,S,T> {
     inner: I,
     left: S,
     right: T
@@ -668,8 +667,8 @@ pub struct And<I,S,T> {
 
 static SINGLETON: json::Json = json::Boolean(true);
 
-impl<I:Selector,S:Selector,T:Selector> Selector for And<I,S,T> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+impl<I:Selector,S:Selector,T:Selector> Selector for AndSel<I,S,T> {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         let mut found_left = false;
         let mut found_right = false;
         self.inner.select(input, |x| {
@@ -677,19 +676,19 @@ impl<I:Selector,S:Selector,T:Selector> Selector for And<I,S,T> {
             self.right.select(x, |_| found_right = true)
         });
         if found_left && found_right {
-            f(Path(&SINGLETON, Some(&input)))
+            f(JsonPath(&SINGLETON, Some(&input)))
         }
     }
 }
 
-pub struct Or<I,S,T> {
+pub struct OrSel<I,S,T> {
     inner: I,
     left: S,
     right: T
 }
 
-impl<I:Selector,S:Selector,T:Selector> Selector for Or<I,S,T> {
-    fn select<'a,'b>(&self, input: Path<'a,'b>, f: <'c>|Path<'a,'c>|) {
+impl<I:Selector,S:Selector,T:Selector> Selector for OrSel<I,S,T> {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         let mut found_left = false;
         let mut found_right = false;
         self.inner.select(input, |x| {
@@ -697,7 +696,7 @@ impl<I:Selector,S:Selector,T:Selector> Selector for Or<I,S,T> {
             self.right.select(x, |_| found_right = true)
         });
         if found_left || found_right {
-            f(Path(&SINGLETON, Some(&input)))
+            f(JsonPath(&SINGLETON, Some(&input)))
         }
     }
 }
@@ -717,7 +716,7 @@ impl JsonExt for json::Json {
         let mut outvec = Vec::new();
         {
             let output = &mut outvec;
-            s.select(Path(self,None), |Path(j,_)| {
+            s.select(JsonPath(self,None), |JsonPath(j,_)| {
                 output.push(j)
             });
         }
@@ -737,32 +736,32 @@ pub fn node() -> Node {
 }
 
 /// Shorthand for `node().boolean()`
-pub fn boolean() -> Boolean<Node> {
+pub fn boolean() -> BooleanSel<Node> {
     node().boolean()
 }
 
 /// Shorthand for `node().number()`
-pub fn number() -> Number<Node> {
+pub fn number() -> NumberSel<Node> {
     node().number()
 }
 
 /// Shorthand for `node().string()`
-pub fn string() -> String<Node> {
+pub fn string() -> StringSel<Node> {
     node().string()
 }
 
 /// Shorthand for `node().object()`
-pub fn object() -> Object<Node> {
+pub fn object() -> ObjectSel<Node> {
     node().object()
 }
 
 /// Shorthand for `node().list()`
-pub fn list() -> List<Node> {
+pub fn list() -> ListSel<Node> {
     node().list()
 }
 
 /// Shorthand for `node().null()`
-pub fn null() -> Null<Node> {
+pub fn null() -> NullSel<Node> {
     node().null()
 }
 
@@ -817,18 +816,18 @@ pub fn diff<T1:Selector,T2:Selector>(left: T1, right: T2) -> Diff<Node,T1,T2> {
 }
 
 /// Shorthand for `node().and(left, right)`
-pub fn and<T1:Selector,T2:Selector>(left: T1, right: T2) -> And<Node,T1,T2> {
+pub fn and<T1:Selector,T2:Selector>(left: T1, right: T2) -> AndSel<Node,T1,T2> {
     node().and(left, right)
 }
 
 /// Shorthand for `node().or(left, right)`
-pub fn or<T1:Selector,T2:Selector>(left: T1, right: T2) -> Or<Node,T1,T2> {
+pub fn or<T1:Selector,T2:Selector>(left: T1, right: T2) -> OrSel<Node,T1,T2> {
     node().or(left, right)
 }
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use super::{child,wherein,Selector,JsonExt};
     use serialize::json;
 
     #[test]
@@ -862,7 +861,7 @@ mod test {
     }
 
     #[test]
-    fn null() {
+    fn match_null() {
         let json = json::from_str(r#"[{},null,{},null,{}]"#).unwrap();
 
         let matches = json.query(child().null());
