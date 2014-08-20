@@ -44,12 +44,12 @@
 //! // Given a list, match all objects in it that
 //! // have a "foo" key where the value is a list
 //! // that contains either the string "Hello, world!"
-//! // or the number 42
+//! // or the u64 42
 //! let matches = json.query(
 //!     list().child().wherein(
 //!         key("foo").list().child().or(
 //!             string().equals("Hello, world!"),
-//!             number().equals(42f64))));
+//!             uint64().equals(42))));
 //!
 //! // Expected matches
 //! let match1 = json::from_str(
@@ -100,9 +100,19 @@ pub trait Selector {
         BooleanSel { inner: self }
     }
 
-    /// Select current node if it is a `json::NumberSel`
-    fn number(self) -> NumberSel<Self> {
-        NumberSel { inner: self }
+    /// Select current node if it is a `json::U64`
+    fn uint64(self) -> U64Sel<Self> {
+        U64Sel { inner: self }
+    }
+
+    /// Select current node if it is a `json::I64`
+    fn int64(self) -> I64Sel<Self> {
+        I64Sel { inner: self }
+    }
+
+    /// Select current node if it is a `json::F64`
+    fn float64(self) -> F64Sel<Self> {
+        F64Sel { inner: self }
     }
 
     /// Select current node if it is a `json::String`
@@ -349,39 +359,117 @@ impl<S:Selector> Selector for BooleanEquals<S> {
     }
 }
 
-pub struct NumberSel<S> {
+pub struct U64Sel<S> {
     inner: S
 }
 
-pub struct NumberEquals<S> {
+pub struct U64Equals<S> {
     inner: S,
-    comp: f64
+    comp: u64
 }
 
-impl<S:Selector> NumberSel<S> {
-    pub fn equals(self, comp: f64) -> NumberEquals<S> {
-        let NumberSel { inner: inner } = self;
-        NumberEquals { inner: inner, comp: comp }
+impl<S:Selector> U64Sel<S> {
+    pub fn equals(self, comp: u64) -> U64Equals<S> {
+        let U64Sel { inner: inner } = self;
+        U64Equals { inner: inner, comp: comp }
     }
 }
 
-impl<S:Selector> Selector for NumberSel<S> {
-    /// Select current `json::Number` node if it is equal to `comp`
+impl<S:Selector> Selector for U64Sel<S> {
+    /// Select current `json::U64` node if it is equal to `comp`
     fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                JsonPath(&json::Number(..),_) => f(x),
+                JsonPath(&json::U64(..),_) => f(x),
                 _ => ()
             }
         })
     }
 }
 
-impl<S:Selector> Selector for NumberEquals<S> {
+impl<S:Selector> Selector for U64Equals<S> {
     fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
         self.inner.select(input, |x| {
             match x {
-                JsonPath(&json::Number(b),_) if b == self.comp => f(x),
+                JsonPath(&json::U64(b),_) if b == self.comp => f(x),
+                _ => ()
+            }
+        })
+    }
+}
+
+pub struct I64Sel<S> {
+    inner: S
+}
+
+pub struct I64Equals<S> {
+    inner: S,
+    comp: i64
+}
+
+impl<S:Selector> I64Sel<S> {
+    pub fn equals(self, comp: i64) -> I64Equals<S> {
+        let I64Sel { inner: inner } = self;
+        I64Equals { inner: inner, comp: comp }
+    }
+}
+
+impl<S:Selector> Selector for I64Sel<S> {
+    /// Select current `json::I64` node if it is equal to `comp`
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
+        self.inner.select(input, |x| {
+            match x {
+                JsonPath(&json::I64(..),_) => f(x),
+                _ => ()
+            }
+        })
+    }
+}
+
+impl<S:Selector> Selector for I64Equals<S> {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
+        self.inner.select(input, |x| {
+            match x {
+                JsonPath(&json::I64(b),_) if b == self.comp => f(x),
+                _ => ()
+            }
+        })
+    }
+}
+
+pub struct F64Sel<S> {
+    inner: S
+}
+
+pub struct F64Equals<S> {
+    inner: S,
+    comp: f64
+}
+
+impl<S:Selector> F64Sel<S> {
+    pub fn equals(self, comp: f64) -> F64Equals<S> {
+        let F64Sel { inner: inner } = self;
+        F64Equals { inner: inner, comp: comp }
+    }
+}
+
+impl<S:Selector> Selector for F64Sel<S> {
+    /// Select current `json::F64` node if it is equal to `comp`
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
+        self.inner.select(input, |x| {
+            match x {
+                JsonPath(&json::F64(..),_) => f(x),
+                _ => ()
+            }
+        })
+    }
+}
+
+impl<S:Selector> Selector for F64Equals<S> {
+    fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
+        self.inner.select(input, |x| {
+            match x {
+                JsonPath(&json::F64(b),_) if b == self.comp => f(x),
                 _ => ()
             }
         })
@@ -740,9 +828,19 @@ pub fn boolean() -> BooleanSel<Node> {
     node().boolean()
 }
 
-/// Shorthand for `node().number()`
-pub fn number() -> NumberSel<Node> {
-    node().number()
+/// Shorthand for `node().uint64()`
+pub fn uint64() -> U64Sel<Node> {
+    node().uint64()
+}
+
+/// Shorthand for `node().int64()`
+pub fn int64() -> I64Sel<Node> {
+    node().int64()
+}
+
+/// Shorthand for `node().float64()`
+pub fn float64() -> F64Sel<Node> {
+    node().float64()
 }
 
 /// Shorthand for `node().string()`
@@ -855,8 +953,8 @@ mod test {
 
         let matches = json.query(
             child().union(
-                wherein(child().number().equals(1f64)),
-                wherein(child().number().equals(2f64))));
+                wherein(child().uint64().equals(1)),
+                wherein(child().uint64().equals(2))));
         assert_eq!(matches.len(), 3);
     }
 
