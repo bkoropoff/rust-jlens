@@ -81,7 +81,7 @@ use std::collections::hashmap;
 /// reference to a path to the parent node.  This
 /// optional parent path should be `None` only for the root
 /// node of a `Json` object.
-pub struct JsonPath<'a,'b>(pub &'a json::Json, pub Option<&'b JsonPath<'a,'b>>);
+pub struct JsonPath<'a:'b,'b>(pub &'a json::Json, pub Option<&'b JsonPath<'a,'b>>);
 
 /// JSON selector trait
 ///
