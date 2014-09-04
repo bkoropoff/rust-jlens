@@ -3,6 +3,6 @@ env:
   global:
     - secure: wxEqAlilALNv93YhNq+KEhEq/BKqnu0fjcIqO1NNfQJaaCPOeAK8ymw8ZFhaA/nl13T7qxbghSP6SUeUBa/+T1Ai6PNXEPmgjty0D9A4wpGDNgtEhldIUiiOLeoRJauj6aUh4ZWF9QSScSyJWC5k5w5OYju6DHJE+xzppDRYirA=
 after_script:
-  - cargo doc
-  - ln -s target/doc doc
+  - cargo doc --verbose
+  - mv target/doc doc
   - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
