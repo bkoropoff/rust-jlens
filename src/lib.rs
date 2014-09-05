@@ -129,41 +129,49 @@ pub trait Selector {
     fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|);
 
     /// Select current node if it is a `json::Boolean`
+    #[inline]
     fn boolean(self) -> BooleanSel<Self> {
         BooleanSel { inner: self }
     }
 
     /// Select current node if it is a `json::U64`
+    #[inline]
     fn uint64(self) -> U64Sel<Self> {
         U64Sel { inner: self }
     }
 
     /// Select current node if it is a `json::I64`
+    #[inline]
     fn int64(self) -> I64Sel<Self> {
         I64Sel { inner: self }
     }
 
     /// Select current node if it is a `json::F64`
+    #[inline]
     fn float64(self) -> F64Sel<Self> {
         F64Sel { inner: self }
     }
 
     /// Select current node if it is a `json::String`
+    #[inline]
     fn string(self) -> StringSel<Self> {
         StringSel { inner: self }
     }
 
     /// Select current node if it is a `json::Object`
+    #[inline]
     fn object(self) -> ObjectSel<Self> {
         ObjectSel { inner: self }
     }
 
     /// Select current node if it is a `json::List`
+    #[inline]
     fn list(self) -> ListSel<Self> {
         ListSel { inner: self }
     }
 
     /// Select current node if it is a `json::Null`
+    #[inline]
     fn null(self) -> NullSel<Self> {
         NullSel { inner: self }
     }
@@ -173,6 +181,7 @@ pub trait Selector {
     /// If the current node is a `json::List` of at least `index + 1`
     /// elements, selects the element at `index`.  Otherwise no nodes
     /// are selected.
+    #[inline]
     fn at(self, index: uint) -> At<Self> {
         At { inner: self, index: index }
     }
@@ -182,6 +191,7 @@ pub trait Selector {
     /// If the current node is a `json::Object` that contains the key
     /// `name`, its value is selected.  Otherwise no nodes are
     /// selected.
+    #[inline]
     fn key(self, name: &str) -> Key<Self> {
         Key { inner: self, name: name }
     }
@@ -190,6 +200,7 @@ pub trait Selector {
     ///
     /// Selects all immediate child nodes of the current node: all
     /// elements of a `json::List`, or all values of a `json::Object`.
+    #[inline]
     fn child(self) -> Child<Self> {
         Child { inner: self }
     }
@@ -198,6 +209,7 @@ pub trait Selector {
     ///
     /// Selects the parent of the current node if it is not the root,
     /// otherwise no nodes are selected.
+    #[inline]
     fn parent(self) -> Parent<Self> {
         Parent { inner: self }
     }
@@ -206,6 +218,7 @@ pub trait Selector {
     ///
     /// Selects all child nodes of the current node and all their
     /// children, recursively.
+    #[inline]
     fn descend(self) -> Descend<Self> {
         Descend { inner: self }
     }
@@ -214,6 +227,7 @@ pub trait Selector {
     ///
     /// Selects the parent, grandparent, etc. of the current node up
     /// to the root of the tree.
+    #[inline]
     fn ascend(self) -> Ascend<Self> {
         Ascend { inner: self }
     }
@@ -223,6 +237,7 @@ pub trait Selector {
     /// Runs the selector `filter` on the current node.  If it selects
     /// any nodes, the current node is selected.  If it does not select
     /// any nodes, no nodes are selected.
+    #[inline]
     fn wherein<T:Selector>(self, filter: T) -> Wherein<Self,T> {
         Wherein { inner: self, filter: filter }
     }
@@ -231,6 +246,7 @@ pub trait Selector {
     ///
     /// Runs `left` and `right` on the current node and selects
     /// nodes which are selected by either.
+    #[inline]
     fn union<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Union<Self,T1,T2> {
         Union { inner: self, left: left, right: right }
     }
@@ -239,6 +255,7 @@ pub trait Selector {
     ///
     /// Runs `left` and `right` on the current node and selects
     /// nodes which are selected by both.
+    #[inline]
     fn intersect<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Intersect<Self,T1,T2> {
         Intersect { inner: self, left: left, right: right }
     }
@@ -251,6 +268,7 @@ pub trait Selector {
     ///
     /// Warning: this selector will execute its parent in the chain
     /// twice which may result in bad performance.
+    #[inline]
     fn diff<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> Diff<Self,T1,T2> {
         Diff { inner: self, left: left, right: right }
     }
@@ -261,6 +279,7 @@ pub trait Selector {
     /// selects an arbitrary node if both selected at
     /// least one node themselves.  This is useful for
     /// encoding logical-and conditions for `wherein`.
+    #[inline]
     fn and<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> AndSel<Self,T1,T2> {
         AndSel { inner: self, left: left, right: right }
     }
@@ -271,6 +290,7 @@ pub trait Selector {
     /// selects an arbitrary node if either selected at
     /// least one node themselves.  This is useful for
     /// encoding logical-and conditions for `wherein`.
+    #[inline]
     fn or<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> OrSel<Self,T1,T2> {
         OrSel { inner: self, left: left, right: right }
     }
@@ -327,6 +347,7 @@ pub struct StringEquals<'a,S> {
 
 impl<S:Selector> StringSel<S> {
     /// Select current `json::String` node if it is equal to `comp`
+    #[inline]
     pub fn equals(self, comp: &str) -> StringEquals<S> {
         let StringSel { inner: inner } = self;
         StringEquals { inner: inner, comp: comp }
@@ -366,6 +387,7 @@ pub struct BooleanEquals<S> {
 
 impl<S:Selector> BooleanSel<S> {
     /// Select current `json::Boolean` node if it is equal to `comp`
+    #[inline]
     pub fn equals(self, comp: bool) -> BooleanEquals<S> {
         let BooleanSel { inner: inner } = self;
         BooleanEquals { inner: inner, comp: comp }
@@ -404,6 +426,7 @@ pub struct U64Equals<S> {
 }
 
 impl<S:Selector> U64Sel<S> {
+    #[inline]
     pub fn equals(self, comp: u64) -> U64Equals<S> {
         let U64Sel { inner: inner } = self;
         U64Equals { inner: inner, comp: comp }
@@ -443,6 +466,7 @@ pub struct I64Equals<S> {
 }
 
 impl<S:Selector> I64Sel<S> {
+    #[inline]
     pub fn equals(self, comp: i64) -> I64Equals<S> {
         let I64Sel { inner: inner } = self;
         I64Equals { inner: inner, comp: comp }
@@ -482,6 +506,7 @@ pub struct F64Equals<S> {
 }
 
 impl<S:Selector> F64Sel<S> {
+    #[inline]
     pub fn equals(self, comp: f64) -> F64Equals<S> {
         let F64Sel { inner: inner } = self;
         F64Equals { inner: inner, comp: comp }
@@ -859,106 +884,127 @@ impl JsonExt for json::Json {
 /// the current node.  This is the starting point of
 /// all selector chains which build up more complex
 /// query expressions.
+#[inline]
 pub fn node() -> Node {
     Node { _dummy: () }
 }
 
 /// Shorthand for `node().boolean()`
+#[inline]
 pub fn boolean() -> BooleanSel<Node> {
     node().boolean()
 }
 
 /// Shorthand for `node().uint64()`
+#[inline]
 pub fn uint64() -> U64Sel<Node> {
     node().uint64()
 }
 
 /// Shorthand for `node().int64()`
+#[inline]
 pub fn int64() -> I64Sel<Node> {
     node().int64()
 }
 
 /// Shorthand for `node().float64()`
+#[inline]
 pub fn float64() -> F64Sel<Node> {
     node().float64()
 }
 
 /// Shorthand for `node().string()`
+#[inline]
 pub fn string() -> StringSel<Node> {
     node().string()
 }
 
 /// Shorthand for `node().object()`
+#[inline]
 pub fn object() -> ObjectSel<Node> {
     node().object()
 }
 
 /// Shorthand for `node().list()`
+#[inline]
 pub fn list() -> ListSel<Node> {
     node().list()
 }
 
 /// Shorthand for `node().null()`
+#[inline]
 pub fn null() -> NullSel<Node> {
     node().null()
 }
 
 /// Shorthand for `node().child()`
+#[inline]
 pub fn child() -> Child<Node> {
     node().child()
 }
 
 /// Shorthand for `node().parent()`
+#[inline]
 pub fn parent() -> Parent<Node> {
     node().parent()
 }
 
 /// Shorthand for `node().descend()`
+#[inline]
 pub fn descend() -> Descend<Node> {
     node().descend()
 }
 
 /// Shorthand for `node().ascend()`
+#[inline]
 pub fn ascend() -> Ascend<Node> {
     node().ascend()
 }
 
 /// Shorthand for `node().at(index)`
+#[inline]
 pub fn at(index: uint) -> At<Node> {
     node().at(index)
 }
 
 /// Shorthand for `node().key(name)`
+#[inline]
 pub fn key<'a>(name: &'a str) -> Key<'a, Node> {
     node().key(name)
 }
 
 /// Shorthand for `node().wherein(filter)`
+#[inline]
 pub fn wherein<T:Selector>(filter: T) -> Wherein<Node,T> {
     node().wherein(filter)
 }
 
 /// Shorthand for `node().intersect(left, right)`
+#[inline]
 pub fn intersect<T1:Selector,T2:Selector>(left: T1, right: T2) -> Intersect<Node,T1,T2> {
     node().intersect(left, right)
 }
 
 /// Shorthand for `node().union(left, right)`
+#[inline]
 pub fn union<T1:Selector,T2:Selector>(left: T1, right: T2) -> Union<Node,T1,T2> {
     node().union(left, right)
 }
 
 /// Shorthand for `node().diff(left, right)`
+#[inline]
 pub fn diff<T1:Selector,T2:Selector>(left: T1, right: T2) -> Diff<Node,T1,T2> {
     node().diff(left, right)
 }
 
 /// Shorthand for `node().and(left, right)`
+#[inline]
 pub fn and<T1:Selector,T2:Selector>(left: T1, right: T2) -> AndSel<Node,T1,T2> {
     node().and(left, right)
 }
 
 /// Shorthand for `node().or(left, right)`
+#[inline]
 pub fn or<T1:Selector,T2:Selector>(left: T1, right: T2) -> OrSel<Node,T1,T2> {
     node().or(left, right)
 }
