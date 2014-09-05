@@ -64,7 +64,7 @@
 //! ```
 //!
 //! The `JsonExt` trait provides a convenience method on `Json`
-//! objects which runs a selector and returns a `Vec<&'self Json>` of
+//! objects which runs a selector and returns a `Vec<&Json>` of
 //! results.
 
 #![crate_type = "rlib"]
@@ -118,14 +118,14 @@ impl<'a,'b> JsonPath<'a,'b> {
 
 /// JSON selector trait
 ///
-/// Implementors of this trait select nodes from `Json`
-/// objects according to some criteria.
+/// Implementors of this trait select nodes from `Json` objects
+/// according to some criteria.
 pub trait Selector {
     /// Select matching nodes
     ///
-    /// Given the path to a single node, `input`, this
-    /// method should identify nodes to be selected and
-    /// invoke the closure `f` with a path to each.
+    /// Given the path to a single node, `input`, this method should
+    /// identify nodes to be selected and invoke the closure `f` with
+    /// a path to each.
     fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|);
 
     /// Select current node if it is a `json::Boolean`
@@ -170,32 +170,34 @@ pub trait Selector {
 
     /// Select list element
     ///
-    /// If the current node is a `json::List` of at
-    /// least `index + 1` elements, selects the element
-    /// at `index`.  Otherwise no nodes are selected.
+    /// If the current node is a `json::List` of at least `index + 1`
+    /// elements, selects the element at `index`.  Otherwise no nodes
+    /// are selected.
     fn at(self, index: uint) -> At<Self> {
         At { inner: self, index: index }
     }
 
     /// Select object value for key
     ///
-    /// If the current node is a `json::Object` that contains
-    /// the key `name`, its value is selected.  Otherwise no
-    /// nodes are selected.
+    /// If the current node is a `json::Object` that contains the key
+    /// `name`, its value is selected.  Otherwise no nodes are
+    /// selected.
     fn key(self, name: &str) -> Key<Self> {
         Key { inner: self, name: name }
     }
 
     /// Select children of current node
     ///
-    /// Selects all immediate child nodes of the current node:
-    /// all elements of a `json::List`, or all values of a
-    /// `json::Object`.
+    /// Selects all immediate child nodes of the current node: all
+    /// elements of a `json::List`, or all values of a `json::Object`.
     fn child(self) -> Child<Self> {
         Child { inner: self }
     }
 
-    /// Select parent of current node if it is not the root
+    /// Select parent of current node
+    ///
+    /// Selects the parent of the current node if it is not the root,
+    /// otherwise no nodes are selected.
     fn parent(self) -> Parent<Self> {
         Parent { inner: self }
     }
@@ -210,8 +212,8 @@ pub trait Selector {
 
     /// Select ancestors of current node
     ///
-    /// Selects the parent, grandparent, etc. of the current node
-    /// up to the root of the tree.
+    /// Selects the parent, grandparent, etc. of the current node up
+    /// to the root of the tree.
     fn ascend(self) -> Ascend<Self> {
         Ascend { inner: self }
     }
@@ -258,7 +260,7 @@ pub trait Selector {
     /// Runs `left` and `right` on the current node and
     /// selects an arbitrary node if both selected at
     /// least one node themselves.  This is useful for
-    /// encoding logical-and conditions for `which`.
+    /// encoding logical-and conditions for `wherein`.
     fn and<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> AndSel<Self,T1,T2> {
         AndSel { inner: self, left: left, right: right }
     }
@@ -268,7 +270,7 @@ pub trait Selector {
     /// Runs `left` and `right` on the current node and
     /// selects an arbitrary node if either selected at
     /// least one node themselves.  This is useful for
-    /// encoding logical-and conditions for `which`.
+    /// encoding logical-and conditions for `wherein`.
     fn or<T1:Selector,T2:Selector>(self, left: T1, right: T2) -> OrSel<Self,T1,T2> {
         OrSel { inner: self, left: left, right: right }
     }
