@@ -72,7 +72,7 @@
 extern crate serialize;
 
 use serialize::json;
-use std::collections::hashmap;
+use std::collections::hash_set;
 
 /// JSON node path
 ///
@@ -349,7 +349,7 @@ impl<S:Selector> StringSel<S> {
     /// Select current `json::String` node if it is equal to `comp`
     #[inline]
     pub fn equals(self, comp: &str) -> StringEquals<S> {
-        let StringSel { inner: inner } = self;
+        let StringSel { inner } = self;
         StringEquals { inner: inner, comp: comp }
     }
 }
@@ -389,7 +389,7 @@ impl<S:Selector> BooleanSel<S> {
     /// Select current `json::Boolean` node if it is equal to `comp`
     #[inline]
     pub fn equals(self, comp: bool) -> BooleanEquals<S> {
-        let BooleanSel { inner: inner } = self;
+        let BooleanSel { inner } = self;
         BooleanEquals { inner: inner, comp: comp }
     }
 }
@@ -428,7 +428,7 @@ pub struct U64Equals<S> {
 impl<S:Selector> U64Sel<S> {
     #[inline]
     pub fn equals(self, comp: u64) -> U64Equals<S> {
-        let U64Sel { inner: inner } = self;
+        let U64Sel { inner } = self;
         U64Equals { inner: inner, comp: comp }
     }
 }
@@ -468,7 +468,7 @@ pub struct I64Equals<S> {
 impl<S:Selector> I64Sel<S> {
     #[inline]
     pub fn equals(self, comp: i64) -> I64Equals<S> {
-        let I64Sel { inner: inner } = self;
+        let I64Sel { inner } = self;
         I64Equals { inner: inner, comp: comp }
     }
 }
@@ -508,7 +508,7 @@ pub struct F64Equals<S> {
 impl<S:Selector> F64Sel<S> {
     #[inline]
     pub fn equals(self, comp: f64) -> F64Equals<S> {
-        let F64Sel { inner: inner } = self;
+        let F64Sel { inner } = self;
         F64Equals { inner: inner, comp: comp }
     }
 }
@@ -622,7 +622,7 @@ pub struct Parent<S> {
 
 impl<S:Selector> Selector for Parent<S> {
     fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
-        let mut seen = hashmap::HashSet::new();
+        let mut seen = hash_set::HashSet::new();
         self.inner.select(input, |x| {
             match x.parent() {
                 Some(&p) => {
@@ -643,7 +643,7 @@ pub struct Descend<S> {
 }
 
 fn descend_helper<'a,'b>(input: JsonPath<'a,'b>,
-                         seen: &mut hashmap::HashSet<*const json::Json>,
+                         seen: &mut hash_set::HashSet<*const json::Json>,
                          f: <'c>|JsonPath<'a,'c>|) {
     let j = input.node();
     if !seen.contains(&(j as *const json::Json)) {
@@ -670,7 +670,7 @@ fn descend_helper<'a,'b>(input: JsonPath<'a,'b>,
 
 impl<S:Selector> Selector for Descend<S> {
     fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
-        let mut seen = hashmap::HashSet::new();
+        let mut seen = hash_set::HashSet::new();
         self.inner.select(input, |x| {
             descend_helper(x, &mut seen, |x| f(x))
         })
@@ -682,7 +682,7 @@ pub struct Ascend<S> {
 }
 
 fn ascend_helper<'a,'b>(mut input: JsonPath<'a,'b>,
-                        seen: &mut hashmap::HashSet<*const json::Json>,
+                        seen: &mut hash_set::HashSet<*const json::Json>,
                         f: <'c>|JsonPath<'a,'c>|) {
     loop {
         match input.parent() {
@@ -703,7 +703,7 @@ fn ascend_helper<'a,'b>(mut input: JsonPath<'a,'b>,
 
 impl<S:Selector> Selector for Ascend<S> {
     fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
-        let mut seen = hashmap::HashSet::new();
+        let mut seen = hash_set::HashSet::new();
         self.inner.select(input, |n| {
             ascend_helper(n, &mut seen, |x| f(x));
         })
@@ -735,7 +735,7 @@ pub struct Union<I,S,T> {
 
 impl<I:Selector,S:Selector,T:Selector> Selector for Union<I,S,T> {
     fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
-        let mut seen = hashmap::HashSet::new();
+        let mut seen = hash_set::HashSet::new();
         self.inner.select(input, |x| {
             self.left.select(x, |x| {
                 let j = x.node();
@@ -763,8 +763,8 @@ pub struct Intersect<I,S,T> {
 
 impl<I:Selector,S:Selector,T:Selector> Selector for Intersect<I,S,T> {
     fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
-        let mut seen_left = hashmap::HashSet::new();
-        let mut seen_right = hashmap::HashSet::new();
+        let mut seen_left = hash_set::HashSet::new();
+        let mut seen_right = hash_set::HashSet::new();
         self.inner.select(input, |x| {
             self.left.select(x, |x| {
                 let j = x.node();
@@ -796,7 +796,7 @@ pub struct Diff<I,S,T> {
 // can't escape the callback
 impl<I:Selector,S:Selector,T:Selector> Selector for Diff<I,S,T> {
     fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: <'c>|JsonPath<'a,'c>|) {
-        let mut seen = hashmap::HashSet::new();
+        let mut seen = hash_set::HashSet::new();
         self.inner.select(input, |x| {
             self.right.select(x, |x| {
                 seen.insert(x.node() as *const json::Json);
