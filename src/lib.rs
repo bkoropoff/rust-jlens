@@ -581,7 +581,7 @@ impl<'f,S:Selector> Selector for Key<'f,S> {
         self.inner.select(input, |x| {
             match x.node() {
                 &json::Object(ref m) => {
-                    match m.find_with(|k| k.as_slice().cmp(&self.name)) {
+                    match m.find_with(|k| k.as_slice().cmp(self.name)) {
                         Some(e) => f(x.descendant(e)),
                         _ => ()
                     }
