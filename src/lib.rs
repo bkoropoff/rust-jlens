@@ -87,6 +87,8 @@ pub enum JsonPath<'a:'b,'b> {
     Descendant(&'a Json, &'b JsonPath<'a,'b>)
 }
 
+impl<'a,'b> Copy for JsonPath<'a,'b> {}
+
 impl<'a,'b> JsonPath<'a,'b> {
     /// Create path at root node `r`
     #[inline]
@@ -303,7 +305,9 @@ pub struct Node {
     _dummy: ()
 }
 
-impl<'f> Selector for Node {
+impl Copy for Node {}
+
+impl Selector for Node {
     fn select<'a,'b>(&self, input: JsonPath<'a,'b>, f: for<'c> |JsonPath<'a,'c>|) {
         f(input)
     }
