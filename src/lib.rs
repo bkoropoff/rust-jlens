@@ -75,7 +75,7 @@ extern crate serialize;
 use serialize::json::Json;
 use std::collections::hash_set;
 
-pub use JsonPath::{Root,Descendant};
+use JsonPath::{Root,Descendant};
 
 /// JSON node path
 ///
