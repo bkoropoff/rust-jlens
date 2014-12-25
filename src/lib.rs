@@ -377,7 +377,7 @@ impl<S:Selector> Selector for StringSel<S> {
     }
 }
 
-impl<'a,S:Selector> Selector for StringEquals<'a,S> {
+impl<'s,S:Selector> Selector for StringEquals<'s,S> {
     fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
                        where F: for<'c> FnMut(JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
@@ -605,7 +605,7 @@ impl<'f,S:Selector> Selector for Key<'f,S> {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::Object(ref m) => {
-                    match m.find_with(|k| k.as_slice().cmp(self.name)) {
+                    match m.get(self.name) {
                         Some(e) => f(x.descendant(e)),
                         _ => ()
                     }
