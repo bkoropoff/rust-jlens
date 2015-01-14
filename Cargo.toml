@@ -2,3 +2,6 @@
 name = "jlens"
 version = "0.0.1"
 authors = [ "bkoropoff@gmail.com" ]
+
+[dependencies]
+rustc-serialize = "0.2.7"

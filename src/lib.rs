@@ -18,14 +18,13 @@
 //! complex query expression can be built up.  Example:
 //!
 //! ```
-//! # #![feature(globs)]
-//! # extern crate serialize;
+//! # extern crate "rustc-serialize" as serialize;
 //! # extern crate jlens;
-//! # use serialize::json;
+//! # use serialize::json::{self, Json};
 //! # use jlens::*;
 //! # fn main() {
 //! // Test JSON document
-//! let json = json::from_str(r#"
+//! let json = r#"
 //! [
 //!    {
 //!        "foo": ["Hello, world!", 3.14, false]
@@ -39,7 +38,7 @@
 //!    {
 //!        "bar": [42, "Hello, world!"]
 //!    }
-//! ]"#).unwrap();
+//! ]"#.parse::<Json>().unwrap();
 //!
 //! // Given a list, match all objects in it that
 //! // have a "foo" key where the value is a list
@@ -52,10 +51,8 @@
 //!             uint64().equals(42))));
 //!
 //! // Expected matches
-//! let match1 = json::from_str(
-//!     r#"{"foo": ["Hello, world!", 3.14, false]}"#).unwrap();
-//! let match2 = json::from_str(
-//!     r#"{"foo": [42, true]}"#).unwrap();
+//! let match1 = r#"{"foo": ["Hello, world!", 3.14, false]}"#.parse::<Json>().unwrap();
+//! let match2 = r#"{"foo": [42, true]}"#.parse::<Json>().unwrap();
 //!
 //! assert_eq!(matches.len(), 2);
 //! assert!(matches.contains(& &match1));
@@ -68,9 +65,8 @@
 //! results.
 
 #![crate_type = "rlib"]
-#![feature(unboxed_closures, globs)]
 
-extern crate serialize;
+extern crate "rustc-serialize" as serialize;
 
 use serialize::json::Json;
 use std::collections::hash_set;
@@ -125,7 +121,7 @@ impl<'a,'b> JsonPath<'a,'b> {
 ///
 /// Implementors of this trait select nodes from `Json` objects
 /// according to some criteria.
-pub trait Selector {
+pub trait Selector: Sized {
     /// Select matching nodes
     ///
     /// Given the path to a single node, `input`, this method should
@@ -188,7 +184,7 @@ pub trait Selector {
     /// elements, selects the element at `index`.  Otherwise no nodes
     /// are selected.
     #[inline]
-    fn at(self, index: uint) -> At<Self> {
+    fn at(self, index: usize) -> At<Self> {
         At { inner: self, index: index }
     }
 
@@ -575,7 +571,7 @@ impl<S:Selector> Selector for NullSel<S> {
 
 pub struct At<S> {
     inner: S,
-    index: uint
+    index: usize
 }
 
 impl<S:Selector> Selector for At<S> {
@@ -998,7 +994,7 @@ pub fn ascend() -> Ascend<Node> {
 
 /// Shorthand for `node().at(index)`
 #[inline]
-pub fn at(index: uint) -> At<Node> {
+pub fn at(index: usize) -> At<Node> {
     node().at(index)
 }
 
@@ -1045,13 +1041,18 @@ pub fn or<T1:Selector,T2:Selector>(left: T1, right: T2) -> OrSel<Node,T1,T2> {
 }
 
 #[cfg(test)]
+#[allow(unstable)]
 mod test {
     use super::{child,wherein,Selector,JsonExt};
     use serialize::json;
 
+    fn from_str(s: &str) -> Option<json::Json> {
+        s.parse()
+    }
+
     #[test]
     fn parent_unique() {
-        let json = json::from_str(r#"[{},{},{},{}]"#).unwrap();
+        let json = from_str(r#"[{},{},{},{}]"#).unwrap();
 
         let matches = json.query(child().parent());
         assert_eq!(matches.len(), 1);
@@ -1062,7 +1063,7 @@ mod test {
 
     #[test]
     fn ascend_unique() {
-        let json = json::from_str(r#"[[{}],[{}],[{}],[{}]]"#).unwrap();
+        let json = from_str(r#"[[{}],[{}],[{}],[{}]]"#).unwrap();
 
         let matches = json.query(child().child().ascend());
         assert_eq!(matches.len(), 5);
@@ -1070,7 +1071,7 @@ mod test {
 
     #[test]
     fn union_unique() {
-        let json = json::from_str(r#"[[1],[2],[3],[1,2]]"#).unwrap();
+        let json = from_str(r#"[[1],[2],[3],[1,2]]"#).unwrap();
 
         let matches = json.query(
             child().union(
@@ -1081,7 +1082,7 @@ mod test {
 
     #[test]
     fn match_null() {
-        let json = json::from_str(r#"[{},null,{},null,{}]"#).unwrap();
+        let json = from_str(r#"[{},null,{},null,{}]"#).unwrap();
 
         let matches = json.query(child().null());
         assert_eq!(matches.len(), 2);
