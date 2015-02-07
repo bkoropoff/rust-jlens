@@ -1047,7 +1047,7 @@ mod test {
     use serialize::json;
 
     fn from_str(s: &str) -> Option<json::Json> {
-        s.parse()
+        s.parse().ok()
     }
 
     #[test]
