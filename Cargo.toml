@@ -2,6 +2,13 @@
 name = "jlens"
 version = "0.0.1"
 authors = [ "bkoropoff@gmail.com" ]
+description = "JSON query combinator library"
+homepage = "https://github.com/bkoropoff/rust-jlens"
+repository = "https://github.com/bkoropoff/rust-jlens.git"
+documentation = "http://www.rust-ci.org/bkoropoff/rust-jlens/doc/jlens/"
+readme = "README.md"
+license = "BSD"
+keywords = ["JSON", "query", "DSL", "combinator"]
 
 [dependencies]
 rustc-serialize = "*"
