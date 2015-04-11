@@ -18,7 +18,7 @@
 //! complex query expression can be built up.  Example:
 //!
 //! ```
-//! # extern crate "rustc-serialize" as serialize;
+//! # extern crate rustc_serialize as serialize;
 //! # extern crate jlens;
 //! # use serialize::json::{self, Json};
 //! # use jlens::*;
@@ -66,7 +66,7 @@
 
 #![crate_type = "rlib"]
 
-extern crate "rustc-serialize" as serialize;
+extern crate rustc_serialize as serialize;
 
 use serialize::json::Json;
 use std::collections::hash_set;
@@ -76,14 +76,13 @@ use JsonPath::{Root,Descendant};
 /// JSON node path
 ///
 /// Represents a path to a JSON node.
+#[derive(Clone, Copy)]
 pub enum JsonPath<'a:'b,'b> {
     /// At the root node
     Root(&'a Json),
     /// At a node with the given parent path
     Descendant(&'a Json, &'b JsonPath<'a,'b>)
 }
-
-impl<'a,'b> Copy for JsonPath<'a,'b> {}
 
 impl<'a,'b> JsonPath<'a,'b> {
     /// Create path at root node `r`
@@ -127,8 +126,8 @@ pub trait Selector: Sized {
     /// Given the path to a single node, `input`, this method should
     /// identify nodes to be selected and invoke the closure `f` with
     /// a path to each.
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>);
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>);
 
     /// Select current node if it is a `Json::Boolean`
     #[inline]
@@ -298,15 +297,14 @@ pub trait Selector: Sized {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Node {
     _dummy: ()
 }
 
-impl Copy for Node {}
-
 impl Selector for Node {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         f(input)
     }
 }
@@ -316,8 +314,8 @@ pub struct ObjectSel<S> {
 }
 
 impl<S:Selector> Selector for ObjectSel<S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::Object(..) => f(x),
@@ -332,8 +330,8 @@ pub struct ListSel<S> {
 }
 
 impl<S:Selector> Selector for ListSel<S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::Array(..) => f(x),
@@ -362,8 +360,8 @@ impl<S:Selector> StringSel<S> {
 }
 
 impl<S:Selector> Selector for StringSel<S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::String(..) => f(x),
@@ -374,8 +372,8 @@ impl<S:Selector> Selector for StringSel<S> {
 }
 
 impl<'s,S:Selector> Selector for StringEquals<'s,S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::String(ref s) if self.comp == *s => f(x),
@@ -404,8 +402,8 @@ impl<S:Selector> BooleanSel<S> {
 }
 
 impl<S:Selector> Selector for BooleanSel<S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::Boolean(..) => f(x),
@@ -416,8 +414,8 @@ impl<S:Selector> Selector for BooleanSel<S> {
 }
 
 impl<S:Selector> Selector for BooleanEquals<S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::Boolean(b) if b == self.comp => f(x),
@@ -446,8 +444,8 @@ impl<S:Selector> U64Sel<S> {
 
 impl<S:Selector> Selector for U64Sel<S> {
     /// Select current `Json::U64` node if it is equal to `comp`
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::U64(..) => f(x),
@@ -458,8 +456,8 @@ impl<S:Selector> Selector for U64Sel<S> {
 }
 
 impl<S:Selector> Selector for U64Equals<S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::U64(b) if b == self.comp => f(x),
@@ -488,8 +486,8 @@ impl<S:Selector> I64Sel<S> {
 
 impl<S:Selector> Selector for I64Sel<S> {
     /// Select current `Json::I64` node if it is equal to `comp`
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::I64(..) => f(x),
@@ -500,8 +498,8 @@ impl<S:Selector> Selector for I64Sel<S> {
 }
 
 impl<S:Selector> Selector for I64Equals<S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::I64(b) if b == self.comp => f(x),
@@ -530,8 +528,8 @@ impl<S:Selector> F64Sel<S> {
 
 impl<S:Selector> Selector for F64Sel<S> {
     /// Select current `Json::F64` node if it is equal to `comp`
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::F64(..) => f(x),
@@ -542,8 +540,8 @@ impl<S:Selector> Selector for F64Sel<S> {
 }
 
 impl<S:Selector> Selector for F64Equals<S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::F64(b) if b == self.comp => f(x),
@@ -558,8 +556,8 @@ pub struct NullSel<S> {
 }
 
 impl<S:Selector> Selector for NullSel<S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::Null => f(x),
@@ -575,13 +573,13 @@ pub struct At<S> {
 }
 
 impl<S:Selector> Selector for At<S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::Array(ref v) => {
                     if v.len() > self.index {
-                        f(x.descendant(&v[self.index]))
+                        f(&x.descendant(&v[self.index]))
                     }
                 }
                 _ => ()
@@ -596,13 +594,13 @@ pub struct Key<'f,S> {
 }
 
 impl<'f,S:Selector> Selector for Key<'f,S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::Object(ref m) => {
                     match m.get(self.name) {
-                        Some(e) => f(x.descendant(e)),
+                        Some(e) => f(&x.descendant(e)),
                         _ => ()
                     }
                 },
@@ -617,18 +615,18 @@ pub struct Child<S> {
 }
 
 impl<S:Selector> Selector for Child<S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             match x.node() {
                 &Json::Object(ref m) => {
                     for (_,child) in m.iter() {
-                        f(x.descendant(child))
+                        f(&x.descendant(child))
                     }
                 },
                 &Json::Array(ref v) => {
                     for child in v.iter() {
-                        f(x.descendant(child))
+                        f(&x.descendant(child))
                     }
                 },
                 _ => ()
@@ -642,8 +640,8 @@ pub struct Parent<S> {
 }
 
 impl<S:Selector> Selector for Parent<S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         let mut seen = hash_set::HashSet::new();
         self.inner.select(input, |x| {
             match x.parent() {
@@ -651,7 +649,7 @@ impl<S:Selector> Selector for Parent<S> {
                     let j = p.node();
                     if !seen.contains(&(j as *const Json)) {
                         seen.insert(j as *const Json);
-                        f(p)
+                        f(&p)
                     }
                 }
                 _ => ()
@@ -664,10 +662,10 @@ pub struct Descend<S> {
     inner: S
 }
 
-fn descend_helper<'a,'b,F>(input: JsonPath<'a,'b>,
+fn descend_helper<'a,'b,F>(input: &JsonPath<'a,'b>,
                            seen: &mut hash_set::HashSet<*const Json>,
                            mut f: F)
-                           where F: for<'c> FnMut(JsonPath<'a,'c>) {
+                           where F: for<'c> FnMut(&JsonPath<'a,'c>) {
     let j = input.node();
     if !seen.contains(&(j as *const Json)) {
         seen.insert(j as *const Json);
@@ -675,15 +673,15 @@ fn descend_helper<'a,'b,F>(input: JsonPath<'a,'b>,
             &Json::Object(ref m) => {
                 for (_,c) in m.iter() {
                     let inner = input.descendant(c);
-                    f(inner);
-                    descend_helper(inner, seen, |x| f(x))
+                    f(&inner);
+                    descend_helper(&inner, seen, |x| f(x))
                 }
             },
             &Json::Array(ref v) => {
                 for c in v.iter() {
                     let inner = input.descendant(c);
-                    f(inner);
-                    descend_helper(inner, seen, |x| f(x))
+                    f(&inner);
+                    descend_helper(&inner, seen, |x| f(x))
                 }
             },
             _ => ()
@@ -692,8 +690,8 @@ fn descend_helper<'a,'b,F>(input: JsonPath<'a,'b>,
 }
 
 impl<S:Selector> Selector for Descend<S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         let mut seen = hash_set::HashSet::new();
         self.inner.select(input, |x| {
             descend_helper(x, &mut seen, |x| f(x))
@@ -705,18 +703,19 @@ pub struct Ascend<S> {
     inner: S
 }
 
-fn ascend_helper<'a,'b,F>(mut input: JsonPath<'a,'b>,
+fn ascend_helper<'a,'b,F>(input: &JsonPath<'a,'b>,
                           seen: &mut hash_set::HashSet<*const Json>,
                           mut f: F)
-                          where F: for<'c> FnMut(JsonPath<'a,'c>) {
+                          where F: for<'c> FnMut(&JsonPath<'a,'c>) {
+    let mut current = *input;
     loop {
-        match input.parent() {
-            Some(&x) => {
+        match current.parent() {
+            Some(x) => {
                 let j = x.node();
                 if !seen.contains(&(j as *const Json)) {
                     seen.insert(j as *const Json);
                     f(x);
-                    input = x;
+                    current = *x;
                 } else {
                     break;
                 }
@@ -727,8 +726,8 @@ fn ascend_helper<'a,'b,F>(mut input: JsonPath<'a,'b>,
 }
 
 impl<S:Selector> Selector for Ascend<S> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         let mut seen = hash_set::HashSet::new();
         self.inner.select(input, |n| {
             ascend_helper(n, &mut seen, |x| f(x));
@@ -742,8 +741,8 @@ pub struct Wherein<S,T> {
 }
 
 impl<S:Selector,T:Selector> Selector for Wherein<S,T> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         self.inner.select(input, |x| {
             let mut matches = false;
             self.filter.select(x, |_| matches = true);
@@ -761,8 +760,8 @@ pub struct Union<I,S,T> {
 }
 
 impl<I:Selector,S:Selector,T:Selector> Selector for Union<I,S,T> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         let mut seen = hash_set::HashSet::new();
         self.inner.select(input, |x| {
             self.left.select(x, |x| {
@@ -790,8 +789,8 @@ pub struct Intersect<I,S,T> {
 }
 
 impl<I:Selector,S:Selector,T:Selector> Selector for Intersect<I,S,T> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         let mut seen_left = hash_set::HashSet::new();
         let mut seen_right = hash_set::HashSet::new();
         self.inner.select(input, |x| {
@@ -824,8 +823,8 @@ pub struct Diff<I,S,T> {
 // because the path breadcrumbs have a lifetime that
 // can't escape the callback
 impl<I:Selector,S:Selector,T:Selector> Selector for Diff<I,S,T> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         let mut seen = hash_set::HashSet::new();
         self.inner.select(input, |x| {
             self.right.select(x, |x| {
@@ -851,8 +850,8 @@ pub struct AndSel<I,S,T> {
 static SINGLETON: Json = Json::Boolean(true);
 
 impl<I:Selector,S:Selector,T:Selector> Selector for AndSel<I,S,T> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         let mut found_left = false;
         let mut found_right = false;
         self.inner.select(input, |x| {
@@ -860,7 +859,7 @@ impl<I:Selector,S:Selector,T:Selector> Selector for AndSel<I,S,T> {
             self.right.select(x, |_| found_right = true)
         });
         if found_left && found_right {
-            f(input.descendant(&SINGLETON))
+            f(&input.descendant(&SINGLETON))
         }
     }
 }
@@ -872,8 +871,8 @@ pub struct OrSel<I,S,T> {
 }
 
 impl<I:Selector,S:Selector,T:Selector> Selector for OrSel<I,S,T> {
-    fn select<'a,'b,F>(&self, input: JsonPath<'a,'b>, mut f: F)
-                       where F: for<'c> FnMut(JsonPath<'a,'c>) {
+    fn select<'a,'b,F>(&self, input: &JsonPath<'a,'b>, mut f: F)
+                       where F: for<'c> FnMut(&JsonPath<'a,'c>) {
         let mut found_left = false;
         let mut found_right = false;
         self.inner.select(input, |x| {
@@ -881,7 +880,7 @@ impl<I:Selector,S:Selector,T:Selector> Selector for OrSel<I,S,T> {
             self.right.select(x, |_| found_right = true)
         });
         if found_left || found_right {
-            f(input.descendant(&SINGLETON))
+            f(&input.descendant(&SINGLETON))
         }
     }
 }
@@ -900,7 +899,7 @@ impl JsonExt for Json {
     fn query<S:Selector>(&self, s: S) -> Vec<&Json> {
         let mut outvec = Vec::new();
         {
-            s.select(JsonPath::root(self), |x| {
+            s.select(&JsonPath::root(self), |x| {
                 outvec.push(x.node())
             });
         }
@@ -1041,7 +1040,6 @@ pub fn or<T1:Selector,T2:Selector>(left: T1, right: T2) -> OrSel<Node,T1,T2> {
 }
 
 #[cfg(test)]
-#[allow(unstable)]
 mod test {
     use super::{child,wherein,Selector,JsonExt};
     use serialize::json;
