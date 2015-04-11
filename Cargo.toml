@@ -7,7 +7,7 @@ homepage = "https://github.com/bkoropoff/rust-jlens"
 repository = "https://github.com/bkoropoff/rust-jlens.git"
 documentation = "http://www.rust-ci.org/bkoropoff/rust-jlens/doc/jlens/"
 readme = "README.md"
-license = "BSD"
+license = "BSD-2-Clause"
 keywords = ["JSON", "query", "DSL", "combinator"]
 
 [dependencies]
