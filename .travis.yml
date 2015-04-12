@@ -1,7 +1,7 @@
 language: rust
 env:
   global:
-    - secure: wxEqAlilALNv93YhNq+KEhEq/BKqnu0fjcIqO1NNfQJaaCPOeAK8ymw8ZFhaA/nl13T7qxbghSP6SUeUBa/+T1Ai6PNXEPmgjty0D9A4wpGDNgtEhldIUiiOLeoRJauj6aUh4ZWF9QSScSyJWC5k5w5OYju6DHJE+xzppDRYirA=
+    - secure: gGXnsjG6nClIp7muPqLXw9Fsc94TnJ43j7+eVAp3EwTtNwq5/lKw95HR9sYawcsDTAVTTfm83lZ1UNdZbM0VHzQjoPTjdathBWBgM2YjpZzoRrHyJtdEtUAr0d3WQo++yjrb5sUZTccoirPyJQ3HkKY45k9PYoQeGlYAnj84FkI=
 after_script:
   - cargo doc --verbose
   - mv target/doc doc
